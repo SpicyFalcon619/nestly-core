@@ -175,7 +175,7 @@ export default function Navbar() {
           </button>
           
           <Link href="/" className="nav-logo">
-            <span className="logo-uiu">UIU</span><span className="logo-nest">Nest</span>
+            <span className="logo-nest">Nest</span><span className="logo-ly">ly</span>
           </Link>
 
           <div className={`nav-links ${mobileMenuOpen ? 'open' : ''} ${scrolled ? 'nav-scrolled' : ''}`}>
