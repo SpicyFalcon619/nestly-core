@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import NotificationsContent from './NotificationsContent';
 
 export const metadata = {
-  title: 'Notifications - UIUNest',
+  title: 'Notifications - Nestly',
   description: 'View your recent notifications.',
 };
 

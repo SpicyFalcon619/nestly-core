@@ -325,7 +325,7 @@ export default function ProfileContent({
                 } /> Verification
               </h3>
               <p style={{ fontSize: '14px', color: 'var(--gray)' }}>
-                Verifying your identity helps build trust within the UIUNest community.
+                Verifying your identity helps build trust within the Nestly community.
               </p>
 
               <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>

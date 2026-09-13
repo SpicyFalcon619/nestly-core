@@ -1,4 +1,4 @@
-// TypeScript types for all UIU-Nest entities
+// TypeScript types for all Nestly entities
 
 export type UserRole = 'student' | 'landlord' | 'admin';
 export type UserGender = 'male' | 'female' | 'other';

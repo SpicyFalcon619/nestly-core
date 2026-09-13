@@ -12,8 +12,8 @@ import Link from 'next/link';
 import MessageButton from '@/components/MessageButton';
 
 export const metadata = {
-  title: 'Listing Details - UIUNest',
-  description: 'View full details for this UIUNest property listing.',
+  title: 'Listing Details - Nestly',
+  description: 'View full details for this Nestly property listing.',
 };
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {

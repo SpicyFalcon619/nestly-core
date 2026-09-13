@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import BillsContent from './BillsContent';
 
 export const metadata = {
-  title: 'Bills Manager - UIUNest',
+  title: 'Bills Manager - Nestly',
   description: 'Manage your flat bills and payments.',
 };
 

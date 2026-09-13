@@ -11,6 +11,7 @@ export default async function Home() {
   const { data: listingsData } = await supabase
     .from('listings')
     .select('*, costs:utility_costs(*)')
+    .neq('status', 'occupied')
     .limit(4)
     .order('created_at', { ascending: false });
     
@@ -63,7 +64,7 @@ export default async function Home() {
 
           <div className="bento-card">
             <div className="bento-icon bento-icon-soft"><ShoppingBag size={32} /></div>
-            <h3>UIUNest Exchange</h3>
+            <h3>Nestly Exchange</h3>
             <p>Buy and sell fans, tables, and appliances with people right in your campus zone. We've even built in a simple offer and counter-offer system.</p>
           </div>
 
@@ -99,7 +100,7 @@ export default async function Home() {
 
         <section className="section">
           <div className="section-head">
-            <h2>UIUNest Exchange: Buy and sell near campus</h2>
+            <h2>Nestly Exchange: Buy and sell near campus</h2>
             <a href="/exchange">Browse all items →</a>
           </div>
           <div className="grid-4" id="latestItems">

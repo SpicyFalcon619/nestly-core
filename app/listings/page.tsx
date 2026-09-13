@@ -4,7 +4,7 @@ import type { Zone, Listing } from '@/types';
 import { Suspense } from 'react';
 
 export const metadata = {
-  title: 'Browse Listings - UIUNest',
+  title: 'Browse Listings - Nestly',
   description: 'Find your next home near UIU.',
 };
 

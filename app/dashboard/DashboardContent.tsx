@@ -14,7 +14,7 @@ import {
 } from '@/app/actions/offers';
 import {
   acceptApplication, rejectApplication,
-  updateListingStatus, updateItemStatus,
+  updateListingStatus, updateItemStatus, deleteListing,
   acceptSeekResponse, rejectSeekResponse,
 } from '@/app/actions/applications';
 import { toast } from 'sonner';
@@ -145,6 +145,15 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
     if (res?.success) {
       toast.success('Listing status updated.');
       setMyListings(prev => prev.map(l => (l.listing_id || l.id) === listingId ? { ...l, status } : l));
+    }
+  };
+
+  const doDeleteListing = async (listingId: number, title: string) => {
+    if (!window.confirm(`Delete "${title}" permanently? This also removes every application, review, and cost record tied to it. This cannot be undone.`)) return;
+    const res = await wrap(listingId, () => deleteListing(listingId));
+    if (res?.success) {
+      toast.success('Listing deleted.');
+      setMyListings(prev => prev.filter(l => (l.listing_id || l.id) !== listingId));
     }
   };
   const doUpdateItemStatus = async (itemId: number, status: string) => {
@@ -301,6 +310,13 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                             <td>
                               <div style={{ display: 'flex', gap: '4px' }}>
                                 <Link className="btn btn-primary btn-sm" href={`/listings/${lid}`}>View</Link>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  disabled={actionLoading === lid}
+                                  onClick={() => doDeleteListing(lid, l.title)}
+                                >
+                                  Delete
+                                </button>
                               </div>
                             </td>
                           </tr>

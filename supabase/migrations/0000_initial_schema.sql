@@ -1,5 +1,5 @@
 -- ============================================================
--- UIU-Nest v2 — Supabase PostgreSQL Schema
+-- Nestly v2 — Supabase PostgreSQL Schema
 -- Run this entire file in Supabase SQL Editor
 -- ============================================================
 

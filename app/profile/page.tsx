@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import ProfileContent from './ProfileContent';
 
 export const metadata = {
-  title: 'My Profile - UIUNest',
+  title: 'My Profile - Nestly',
   description: 'Manage your profile and roommate preferences.',
 };
 

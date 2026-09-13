@@ -9,7 +9,9 @@ export default function ExchangeItemCard({ item, isLoggedIn }: { item: Item; isL
 
   return (
     <div className="listing-card">
-      <img className="listing-photo" src={thumbnail} alt={item.title} loading="lazy" />
+      <div className="listing-photo-wrap">
+        <img className="listing-photo" src={thumbnail} alt={item.title} loading="lazy" />
+      </div>
       <div className="listing-body">
         <div className="badges">
           <span className="badge badge-navy">{item.category}</span>

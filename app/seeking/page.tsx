@@ -4,7 +4,7 @@ import SeekingContent from './SeekingContent';
 import type { Zone, SeekingPost } from '@/types';
 
 export const metadata = {
-  title: 'Seeking Flatmates - UIUNest',
+  title: 'Seeking Flatmates - Nestly',
   description: 'Find students seeking roommates or flats near UIU.',
 };
 

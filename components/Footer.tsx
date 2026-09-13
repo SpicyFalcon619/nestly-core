@@ -13,7 +13,7 @@ export default function Footer() {
         <Link href="/seeking" style={{ color: '#fff', textDecoration: 'none' }}>Looking For</Link>
       </div>
       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
-        &copy; {new Date().getFullYear()} UIUNest - United International University
+        &copy; {new Date().getFullYear()} Nestly - United International University
       </div>
     </footer>
   );

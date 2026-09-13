@@ -1,5 +1,5 @@
 -- ============================================================
--- UIUNest v2 — Migration 0002
+-- Nestly v2 — Migration 0002
 -- Public Profiles + Live Messaging schema
 -- Run this entire file in the Supabase SQL Editor
 -- ============================================================

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import MessagesClient from './MessagesClient';
 
-export const metadata = { title: 'Messages - UIUNest' };
+export const metadata = { title: 'Messages - Nestly' };
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ convo?: string }> }) {
   const supabase = await createClient();

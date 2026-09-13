@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .single();
 
   return {
-    title: profile ? `${profile.name} — UIUNest` : 'User Profile — UIUNest',
-    description: profile?.bio ?? `View this user's profile on UIUNest.`,
+    title: profile ? `${profile.name} — Nestly` : 'User Profile — Nestly',
+    description: profile?.bio ?? `View this user's profile on Nestly.`,
   };
 }
 

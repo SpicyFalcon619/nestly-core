@@ -5,7 +5,7 @@ import AdminContent from './AdminContent';
 import type { AdminStats, Complaint, Verification, Notification } from '@/types';
 
 export const metadata = {
-  title: 'Admin Dashboard - UIUNest',
+  title: 'Admin Dashboard - Nestly',
   description: 'Manage users, verifications, and complaints.',
 };
 

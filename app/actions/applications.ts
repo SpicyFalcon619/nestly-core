@@ -139,6 +139,23 @@ export async function updateListingStatus(listingId: number, status: string) {
   return { success: true };
 }
 
+export async function deleteListing(listingId: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthorized' };
+
+  const { data: listing } = await supabase.from('listings').select('user_id').eq('listing_id', listingId).single();
+  if (!listing || listing.user_id !== user.id) return { error: 'Unauthorized' };
+
+  const { error } = await supabase.from('listings').delete().eq('listing_id', listingId);
+  if (error) return { error: error.message };
+
+  revalidatePath('/dashboard');
+  revalidatePath('/listings');
+  revalidatePath('/');
+  return { success: true };
+}
+
 export async function updateItemStatus(itemId: number, status: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
