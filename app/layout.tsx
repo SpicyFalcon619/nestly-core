@@ -29,6 +29,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             if (localStorage.getItem('userRole') === 'landlord') {
               document.documentElement.classList.add('is-landlord');
             }
+            var theme = localStorage.getItem('theme');
+            if (theme === 'light' || theme === 'dark') {
+              document.documentElement.setAttribute('data-theme', theme);
+            }
           } catch (e) {}
         `}} />
       </head>

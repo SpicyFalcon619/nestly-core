@@ -1,6 +1,6 @@
 # Nestly
 
-A web platform for finding, verifying, and living in shared student and bachelor housing near UIU — plus a marketplace for buying and selling second-hand household items within the same community.
+A web platform for finding, verifying, and living in shared student and bachelor housing near private university campuses in Dhaka — plus a marketplace for buying and selling second-hand household items within the same community.
 
 Nestly connects three kinds of user — **Renters**, **Landlords**, and **Administrators** — around two related problems: finding a place to live with every cost itemized up front, and knowing who you're actually renting from or living with before you commit.
 

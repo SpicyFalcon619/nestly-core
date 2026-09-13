@@ -378,7 +378,7 @@ CREATE TABLE notifications (
 -- SEED DATA: Zones
 -- ============================================================
 INSERT INTO zones (zone_name, description, center_lat, center_lng, radius_km) VALUES
-('UIU Campus Area',  'Immediate surroundings of UIU main campus', 23.797900, 90.449700, 1.5),
+('Badda Campus Area','Immediate surroundings of the Badda university campuses', 23.797900, 90.449700, 1.5),
 ('Sayed Nagar',      'Residential area close to campus',          23.795000, 90.444000, 2.0),
 ('Shatarkul',        'Quiet neighbourhood south of campus',       23.791000, 90.435000, 2.5),
 ('Nurer Chala',      'Bustling commercial and residential area',  23.805000, 90.438000, 2.0),

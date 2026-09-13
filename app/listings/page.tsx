@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 export const metadata = {
   title: 'Browse Listings - Nestly',
-  description: 'Find your next home near UIU.',
+  description: 'Find your next home near campus in Dhaka.',
 };
 
 export default async function ListingsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {

@@ -169,7 +169,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
                   />
                 )}
                 <div style={{ fontSize: '14px', color: 'var(--gray)', marginTop: '4px' }}>
-                  UIU Student · Member since {fmtDate(item.seller?.created_at || item.created_at)}
+                  Student · Member since {fmtDate(item.seller?.created_at || item.created_at)}
                 </div>
               </div>
             </div>

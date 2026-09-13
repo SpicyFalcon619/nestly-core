@@ -29,7 +29,7 @@ export default function HeroSearchForm() {
           onChange={(v) => setZone(v)}
           options={[
             { value: 'all', label: 'All Zones' },
-            { value: 'UIU Campus Area', label: 'UIU Campus Area' },
+            { value: 'Badda Campus Area', label: 'Badda Campus Area' },
             { value: 'Sayed Nagar', label: 'Sayed Nagar' },
             { value: 'Shatarkul', label: 'Shatarkul' },
             { value: 'Nurer Chala', label: 'Nurer Chala' },

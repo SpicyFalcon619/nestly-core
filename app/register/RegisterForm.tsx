@@ -159,7 +159,7 @@ export default function RegisterForm() {
       </div>
 
       <div className="form-group" style={{ display: role === 'landlord' ? 'none' : 'block' }}>
-        <label>UIU Student ID (optional)</label>
+        <label>Student ID (optional)</label>
         <input type="text" />
       </div>
 

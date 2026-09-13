@@ -52,13 +52,73 @@ From `app/globals.css`, the real current palette:
 - Headings: Plus Jakarta Sans (700–800). Body: Inter.
 - Radius: 10px base, 18–24px on cards, full/100px on pills.
 
+## Rebrand + dark theme + map dark skin (2026-09-13, later same day)
+
+Dropped the UIU-only scope entirely — Nestly is now framed as "any
+private university student around Dhaka," per explicit ask. Also did a
+lighter de-cliché visual pass and added a real light/dark theme
+switcher. Things worth knowing before touching this again:
+
+- **`registerSchema` no longer restricts student emails** to
+  `@uiu.ac.bd` (the `.superRefine` check in `lib/schemas.ts` was
+  deleted). Deliberately did NOT add a university picker/whitelist —
+  any email works for any role. If a "which university" concept gets
+  requested later, that's new scope, not a revert of this.
+- **The "UIU Campus Area" zone rename needs a migration applied.**
+  Renamed to "Badda Campus Area" (same real Badda coordinates) in
+  `lib/data.ts`, `components/HeroSearchForm.tsx`, and the
+  `0000_initial_schema.sql` seed — but the **live Supabase DB already
+  has the old row** from when 0000 first ran, and migrations don't
+  retroactively re-run. `supabase/migrations/0004_rename_uiu_zone.sql`
+  does the actual `UPDATE zones SET zone_name = ...` — it must be
+  applied (SQL Editor or CLI) for the running app to show the new name;
+  until then the DB-backed zone list (listings sidebar) still shows the
+  old name even though the hardcoded fallback in `lib/data.ts` doesn't.
+- **`--gold` is now a real gold/amber (`#D6A419` light / `#F2C94C`
+  dark)**, not an alias for emerald-mid like before. It was being used
+  for star ratings, which were rendering as green stars — now genuinely
+  gold. Also used for "click to verify" hints and the exchange
+  counter-offer accent. Don't repoint it back to emerald.
+- **Dark theme is a real second palette**, not a filter/invert:
+  `:root[data-theme="dark"]` in `app/globals.css`, plus a
+  `@media (prefers-color-scheme: dark)` fallback for users who haven't
+  explicitly chosen. `components/ThemeToggle.tsx` flips the attribute
+  and persists to `localStorage['theme']`; `app/layout.tsx` has an
+  inline anti-flash script (same pattern as the existing `is-landlord`
+  script) that applies the stored choice before paint. Badge tints,
+  glass-navbar backgrounds, and the hero/auth gradient wash all moved
+  behind CSS vars (`--tint-*`, `--glass*`, `--hero-tint-*`) specifically
+  so dark mode wouldn't wash them out — if you add a new light-only
+  hardcoded color anywhere, it WILL look wrong in dark mode, there's no
+  automatic correction.
+- **Map tiles are theme-reactive** via `lib/mapTheme.ts`. Light mode
+  still uses the pre-existing keyless raw Google XYZ tile trick (already
+  a bit ToS-grey-area, not new). Dark mode uses Esri's free
+  `World_Dark_Gray_Base` tiles — tried CartoDB's `dark_all` first, but
+  their free anonymous tiles now show an "API KEY REQUIRED" watermark,
+  so don't reach for that. Wired into `MapComponent.tsx`,
+  `ListingMapClient.tsx`, `MapPicker.tsx` via a `MutationObserver` on
+  `data-theme` (`watchMapTheme`).
+  - **Gotcha**: `MapComponent.tsx`'s map-init `useEffect` has no cleanup
+    (the `mapRef` guard is never reset), so it's not idempotent under
+    React StrictMode's dev-only double-invoke. Any new effect that
+    returns a real cleanup function needs to live in its OWN separate
+    `useEffect`, not be added into that one — otherwise StrictMode's
+    mount→cleanup→mount dance disconnects it (e.g. a `MutationObserver`)
+    with no matching re-subscribe, and it silently never fires again.
+    `ListingMapClient.tsx` and `MapPicker.tsx` don't have this problem
+    since their init effects already fully tear down and null the map
+    ref on cleanup.
+- Removed the hero's triple-stacked radial "glow orb" background and
+  gave `.bento-icon` a bordered chip treatment instead of a bare icon —
+  minor de-cliché pass, not the full redesign below.
+
 ## Pending — asked for, not yet done
 
-**A full visual/UI redesign pass** — the site currently "looks generic";
-the ask is to renew the look while keeping the emerald/off-white color
-theme above. Explicitly asked to see a plan (or a mockup) BEFORE any
-component-level CSS gets touched — don't start restyling components
-without presenting that first.
+**A full visual/UI redesign pass** is still open. Today's session did a
+lighter refresh (dark theme, one de-clichéd hero/icon pass, a real gold
+accent) but not a ground-up redesign. If a heavier pass gets requested,
+still show a plan/mockup before touching component-level CSS.
 
 ## Env vars the app actually reads
 

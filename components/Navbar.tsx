@@ -8,6 +8,7 @@ import type { Profile } from '@/types';
 import { Home, Building2, ShoppingBag, Search, UserCircle, LayoutDashboard, User, Heart, Receipt, LogOut, Menu, MessageCircle, ArrowLeft } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import MessageIcon from './MessageIcon';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -130,7 +131,7 @@ export default function Navbar() {
       <nav style={{
         height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 20px', borderBottom: '1px solid var(--border)',
-        background: '#fff', flexShrink: 0,
+        background: 'var(--surface)', flexShrink: 0,
         position: 'relative', zIndex: 2000,
       }}>
         <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink-muted)', textDecoration: 'none', fontWeight: 500, fontSize: 14 }}>
@@ -142,21 +143,24 @@ export default function Navbar() {
           Messages
         </span>
 
-        {!loading && user && (
-          <div className="avatar" onClick={() => setAvatarOpen(!avatarOpen)} style={{ cursor: 'pointer', position: 'relative' }} ref={avatarMenuRef}>
-            {user.profile_pic
-              ? <img src={user.profile_pic} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="Avatar" />
-              : initials}
-            {avatarOpen && (
-              <div className="avatar-menu open" style={{ top: '100%', right: 0, position: 'absolute' }}>
-                {user.role !== 'admin' && <Link href="/dashboard">Dashboard</Link>}
-                <Link href="/profile">Profile</Link>
-                {user.role !== 'admin' && <Link href="/bills">Bills</Link>}
-                <button onClick={handleLogout}>Logout</button>
-              </div>
-            )}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <ThemeToggle />
+          {!loading && user && (
+            <div className="avatar" onClick={() => setAvatarOpen(!avatarOpen)} style={{ cursor: 'pointer', position: 'relative' }} ref={avatarMenuRef}>
+              {user.profile_pic
+                ? <img src={user.profile_pic} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="Avatar" />
+                : initials}
+              {avatarOpen && (
+                <div className="avatar-menu open" style={{ top: '100%', right: 0, position: 'absolute' }}>
+                  {user.role !== 'admin' && <Link href="/dashboard">Dashboard</Link>}
+                  <Link href="/profile">Profile</Link>
+                  {user.role !== 'admin' && <Link href="/bills">Bills</Link>}
+                  <button onClick={handleLogout}>Logout</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </nav>
     );
   }
@@ -220,12 +224,14 @@ export default function Navbar() {
                     <Link href="/bills" className="mas-item" onClick={() => setAccountOpen(false)}><Receipt size={16} /> Bills</Link>
                   </>
                 )}
+                <ThemeToggle variant="menu-item" />
                 <button className="mas-item mas-logout" onClick={handleLogout}><LogOut size={16} /> Logout</button>
               </div>
             )}
           </div>
 
           <div className="nav-right">
+            <ThemeToggle />
             {!loading && (
               <>
                 {user ? (

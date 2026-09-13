@@ -34,10 +34,10 @@ export default async function Home() {
     <>
       <section className="hero">
         <div className="hero-inner">
-          <h1>Find your home near UIU.<br /><span className="hero-accent">No hidden costs. Ever.</span></h1>
+          <h1>Find your next home in Dhaka.<br /><span className="hero-accent">No hidden costs. Ever.</span></h1>
           <p>The only platform that actually shows every single bill like rent, electricity, gas, and internet right upfront, before you commit to a single taka.</p>
           <HeroSearchForm />
-          <p className="hero-trust">Trusted by <strong>UIU students</strong> · Verified landlords · Transparent billing</p>
+          <p className="hero-trust">Trusted by <strong>students across Dhaka</strong> · Verified landlords · Transparent billing</p>
         </div>
       </section>
 
@@ -84,7 +84,7 @@ export default async function Home() {
 
         <section className="section" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="section-head">
-            <h2>Latest listings near UIU</h2>
+            <h2>Latest listings near campus</h2>
             <a href="/listings">Browse all listings →</a>
           </div>
           <div className="grid-4" id="latestListings">
@@ -117,7 +117,7 @@ export default async function Home() {
         <section className="section" style={{ borderBottom: 'none' }}>
           <h2 className="section-center-title">How it works</h2>
           <div className="steps">
-            <div className="step"><div className="step-num">1</div><h3>Register</h3><p>Sign up with your UIU email address.</p></div>
+            <div className="step"><div className="step-num">1</div><h3>Register</h3><p>Sign up with your email address in minutes.</p></div>
             <div className="step"><div className="step-num">2</div><h3>Browse</h3><p>Browse verified listings with full cost breakdown.</p></div>
             <div className="step"><div className="step-num">3</div><h3>Connect</h3><p>Connect with landlords and compatible flatmates.</p></div>
           </div>

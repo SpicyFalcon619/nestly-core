@@ -86,7 +86,7 @@ export default async function PublicProfilePage({ params }: Props) {
     .limit(6);
 
   const roleLabel: Record<string, string> = {
-    student: 'UIU Student',
+    student: 'Student',
     landlord: 'Landlord / Mess Owner',
     admin: 'Administrator',
   };

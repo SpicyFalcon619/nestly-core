@@ -4,8 +4,8 @@ import type { Zone } from '@/types';
 export const zones: Zone[] = [
   {
     zone_id: 1, id: 1,
-    zone_name: 'UIU Campus Area', name: 'UIU Campus Area',
-    description: 'Immediate surroundings of UIU main campus',
+    zone_name: 'Badda Campus Area', name: 'Badda Campus Area',
+    description: 'Immediate surroundings of the Badda university campuses',
     center_lat: 23.7979, center_lng: 90.4497, lat: 23.7979, lng: 90.4497,
     radius_km: 1.5,
     polygon: [[23.8010, 90.4460], [23.8010, 90.4550], [23.7940, 90.4550], [23.7940, 90.4460]],

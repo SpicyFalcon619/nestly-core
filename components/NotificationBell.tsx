@@ -178,7 +178,7 @@ export default function NotificationBell() {
                       </button>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--ink-muted)', marginTop: 4 }}>
                     {mounted ? new Date(n.created_at).toLocaleString() : ''}
                   </div>
                 </div>

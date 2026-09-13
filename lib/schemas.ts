@@ -6,14 +6,6 @@ export const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   role: z.enum(['student', 'landlord', 'admin']),
   gender: z.enum(['male', 'female', 'other'])
-}).superRefine((data, ctx) => {
-  if (data.role === 'student' && !data.email.endsWith('@uiu.ac.bd') && !data.email.endsWith('@bscse.uiu.ac.bd')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "Students must use a valid UIU email address (@uiu.ac.bd or @bscse.uiu.ac.bd)",
-      path: ['email']
-    });
-  }
 });
 
 export const loginSchema = z.object({

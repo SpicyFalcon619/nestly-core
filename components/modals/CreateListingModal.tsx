@@ -9,7 +9,7 @@ import CustomSelect from '@/components/CustomSelect';
 import dynamic from 'next/dynamic';
 import { createAdminNotification } from '@/app/actions/notifications';
 
-const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false, loading: () => <div style={{height: '300px', background: '#f0f0f0', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Loading map...</div> });
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false, loading: () => <div style={{height: '300px', background: 'var(--surface-2)', color: 'var(--ink-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Loading map...</div> });
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -255,7 +255,7 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }: Creat
         
         <div className="form-group">
           <label>Title</label>
-          <input type="text" required placeholder="e.g. Spacious Single Room near UIU Campus" value={formData.title} onChange={e => handleChange('title', e.target.value)} />
+          <input type="text" required placeholder="e.g. Spacious Single Room near Badda Campus" value={formData.title} onChange={e => handleChange('title', e.target.value)} />
         </div>
         
         <div className="grid-2">

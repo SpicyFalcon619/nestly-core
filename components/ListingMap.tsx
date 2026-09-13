@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 
 const ListingMapClient = dynamic(() => import('./ListingMapClient'), {
   ssr: false,
-  loading: () => <div style={{ height: '350px', width: '100%', background: '#e2e8f0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading map...</div>
+  loading: () => <div style={{ height: '350px', width: '100%', background: 'var(--surface-2)', color: 'var(--ink-muted)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading map...</div>
 });
 
 interface ListingMapProps {

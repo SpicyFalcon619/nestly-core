@@ -89,7 +89,7 @@ export default function ApplicationForm({ listingId, ownerId, listingTitle, exis
       )}
       <textarea
         className="form-control"
-        placeholder="Hi, I'm a UIU student interested in renting..."
+        placeholder="Hi, I'm a student interested in renting..."
         style={{ height: '100px', marginBottom: '12px' }}
         value={message}
         onChange={e => setMessage(e.target.value)}

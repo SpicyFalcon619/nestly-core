@@ -289,7 +289,7 @@ export default function BillsContent({
                 <input
                   type="number" min="0" value={baseRent}
                   onChange={e => setBaseRent(Number(e.target.value))}
-                  style={{ background: activeListing ? '#f3f4f6' : undefined }}
+                  style={{ background: activeListing ? 'var(--surface-2)' : undefined }}
                   readOnly={!!activeListing}
                 />
               </div>

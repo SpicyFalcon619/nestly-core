@@ -47,7 +47,7 @@ export default function SeekingContent({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="page-title" style={{ margin: '0 0 8px 0' }}>Seeking Flatmates</h1>
-          <p style={{ margin: 0, color: 'var(--gray)' }}>Find students looking for rooms or flatmates near UIU.</p>
+          <p style={{ margin: 0, color: 'var(--gray)' }}>Find students looking for rooms or flatmates near your campus.</p>
         </div>
         <div>
           {isLoggedIn && !isAdmin ? (

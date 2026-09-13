@@ -131,7 +131,7 @@ export default function ReviewsSection({
       </div>
 
       {showForm && (
-        <form onSubmit={e => { e.preventDefault(); doSubmit(); }} style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', marginBottom: '32px', border: '1px solid var(--border)' }}>
+        <form onSubmit={e => { e.preventDefault(); doSubmit(); }} style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: '8px', marginBottom: '32px', border: '1px solid var(--border)' }}>
           <h4 style={{ marginTop: 0 }}>Rate your experience</h4>
           <div className="grid-2" style={{ gap: '16px 32px', marginBottom: '16px' }}>
             <div>
