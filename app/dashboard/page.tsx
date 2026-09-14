@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { fetchUserActivity } from '@/lib/activity';
 import DashboardContent from './DashboardContent';
 import type { Profile, DashboardData, Listing, Item, Offer, Application, SeekingPost, SeekingResponse } from '@/types';
 
@@ -93,6 +94,8 @@ export default async function DashboardPage() {
     });
   }
 
+  const activity = await fetchUserActivity(supabase, userId);
+
   const dashData: DashboardData = {
     myListings: (myListings || []) as Listing[],
     myItems: (myItems || []) as Item[],
@@ -128,6 +131,7 @@ export default async function DashboardPage() {
       responder_email: r.responder?.email
     })) as SeekingResponse[],
     hasPreferences: !!hasPreferences,
+    activity,
     verifStatus: verifStatus?.status || 'none',
     notifications: userNotifications || []
   };

@@ -5,7 +5,6 @@ import L from 'leaflet';
 import { MAP_CENTER, MAP_ZOOM } from '@/lib/data';
 import type { Zone, Listing } from '@/types';
 import { fmt } from '@/lib/utils';
-import { getCurrentMapTheme, getTileConfig, watchMapTheme } from '@/lib/mapTheme';
 
 // Fix default Leaflet icon paths (bundler strips the default URLs)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -56,32 +55,15 @@ export default function MapComponent({
       scrollWheelZoom: interactive ? 'center' : false,
     }).setView(MAP_CENTER, MAP_ZOOM);
 
-    const tileConfig = getTileConfig(getCurrentMapTheme());
-    tileLayerRef.current = L.tileLayer(tileConfig.url, {
+    tileLayerRef.current = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom:    20,
-      subdomains: tileConfig.subdomains,
-      attribution: tileConfig.attribution,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps',
     }).addTo(mapRef.current);
 
     polygonLayerRef.current = L.layerGroup().addTo(mapRef.current);
     pinLayerRef.current     = L.layerGroup().addTo(mapRef.current);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Swap tiles on theme change. Kept as its own effect (independent of the
-  // map-init guard above) so React StrictMode's dev-mode double-invoke
-  // doesn't tear down the only observer without a matching re-subscribe.
-  useEffect(() => {
-    return watchMapTheme((theme) => {
-      if (!mapRef.current) return;
-      const cfg = getTileConfig(theme);
-      if (tileLayerRef.current) mapRef.current.removeLayer(tileLayerRef.current);
-      tileLayerRef.current = L.tileLayer(cfg.url, {
-        maxZoom: 20,
-        subdomains: cfg.subdomains,
-        attribution: cfg.attribution,
-      }).addTo(mapRef.current);
-    });
-  }, []);
 
   // Redraw zone polygons when zones or selection changes
   useEffect(() => {

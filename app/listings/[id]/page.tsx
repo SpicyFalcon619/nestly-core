@@ -7,6 +7,9 @@ import ReviewsSection from '@/components/ReviewsSection';
 import { notFound } from 'next/navigation';
 import ListingMap from '@/components/ListingMap';
 import PhotoGallery from '@/components/PhotoGallery';
+import StatusChanger from '@/components/StatusChanger';
+import { fetchCommentsWithAuthors } from '@/lib/comments';
+import ReportButton from '@/components/ReportButton';
 import CommentSection from '@/components/comments/CommentSection';
 import UserRating from '@/components/ratings/UserRating';
 import Link from 'next/link';
@@ -111,16 +114,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   }
 
   // Fetch comments
-  const { data: commentsData } = await supabase
-    .from('listing_comments')
-    .select(`
-      *,
-      user:profiles!listing_comments_user_id_fkey(name, profile_pic)
-    `)
-    .eq('listing_id', parseInt(id))
-    .order('created_at', { ascending: true });
-
-  const comments = commentsData || [];
+  const comments = await fetchCommentsWithAuthors(supabase, 'listing_comments', 'listing_id', parseInt(id));
 
   let finalComments = comments;
   if (isLoggedIn) {
@@ -339,7 +333,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                     {owner.profile_pic ? (
                       <img src={owner.profile_pic} alt={owner.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
                     ) : (
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16 }}>
                         {avatarInitials(owner.name || 'U')}
                       </div>
                     )}
@@ -348,7 +342,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   owner.profile_pic ? (
                     <img src={owner.profile_pic} alt={owner.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)', flexShrink: 0 }} />
                   ) : (
-                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
                       {avatarInitials(owner.name || 'U')}
                     </div>
                   )
@@ -376,9 +370,16 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
               {isLoggedIn ? (
                 user?.id === listing.user_id || isAdmin ? (
-                  <div style={{ padding: '14px', background: 'var(--surface-1)', borderRadius: '8px', textAlign: 'center', color: 'var(--ink-muted)', fontSize: '14px' }}>
-                    {isAdmin ? 'Admins cannot apply for listings.' : 'This is your own listing.'}
-                  </div>
+                  <>
+                    <div style={{ padding: '14px', background: 'var(--surface-1)', borderRadius: '8px', textAlign: 'center', color: 'var(--ink-muted)', fontSize: '14px' }}>
+                      {isAdmin ? 'Admins cannot apply for listings.' : 'This is your own listing.'}
+                    </div>
+                    {user?.id === listing.user_id && (
+                      <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+                        <StatusChanger type="listing" entityId={parseInt(id)} currentStatus={listing.status} />
+                      </div>
+                    )}
+                  </>
                 ) : isOccupied ? (
                   <>
                     <div style={{ padding: '14px', background: 'var(--tint-red)', borderRadius: '8px', textAlign: 'center', color: 'var(--danger)', fontSize: '14px', fontWeight: 500 }}>
@@ -412,6 +413,16 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               ) : (
                 <div style={{ padding: '14px', background: 'var(--surface-1)', borderRadius: '8px', textAlign: 'center', color: 'var(--ink-muted)', fontSize: '14px' }}>
                   Please <Link href="/login" style={{ color: 'var(--primary)' }}>log in</Link> to apply.
+                </div>
+              )}
+
+              {isLoggedIn && user?.id !== listing.user_id && (
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+                  <ReportButton
+                    listingId={parseInt(id)}
+                    againstUserId={listing.user_id}
+                    contextTitle={listing.title}
+                  />
                 </div>
               )}
             </div>

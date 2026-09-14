@@ -9,6 +9,7 @@ import UserRating from '@/components/ratings/UserRating';
 import OffersSection from '@/components/OffersSection';
 import MessageButton from '@/components/MessageButton';
 import PhotoGallery from '@/components/PhotoGallery';
+import { fetchCommentsWithAuthors } from '@/lib/comments';
 
 export default async function ExchangeItemDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,14 +32,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
     notFound();
   }
 
-  const { data: commentsData } = await supabase
-    .from('item_comments')
-    .select(`
-      *,
-      user:profiles!item_comments_user_id_fkey(name, profile_pic)
-    `)
-    .eq('item_id', parseInt(id))
-    .order('created_at', { ascending: true });
+  const commentsData = await fetchCommentsWithAuthors(supabase, 'item_comments', 'item_id', parseInt(id));
 
   // Fetch offers — owner sees all, buyer sees their own, others see accepted + pending counts only
   const { data: offersData } = await supabase
@@ -131,7 +125,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
                   {item.seller?.profile_pic ? (
                     <img src={item.seller.profile_pic} alt={item.seller.name} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }} />
                   ) : (
-                    <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 20 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: 'var(--btn-primary-bg)', color: 'var(--btn-primary-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 20 }}>
                       {avatarInitials(item.seller?.name || 'U')}
                     </div>
                   )}
@@ -140,7 +134,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
                 item.seller?.profile_pic ? (
                   <img src={item.seller.profile_pic} alt={item.seller.name} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 20, flexShrink: 0 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: '50%', backgroundColor: 'var(--btn-primary-bg)', color: 'var(--btn-primary-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 20, flexShrink: 0 }}>
                     {avatarInitials(item.seller?.name || 'U')}
                   </div>
                 )

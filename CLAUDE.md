@@ -178,18 +178,110 @@ time, so they were swept systematically rather than reactively):
   thumbnails styled `cursor: pointer` that had no click handler at all
   — it's a server component, so they could never have worked.
 
-**Still broken / never wired up** (found, not fixed):
-- `components/modals/ComplaintModal.tsx` and `components/StatusChanger.tsx`
-  are both **orphaned** — never imported anywhere. So the advertised
-  "formal complaint system" has no UI path, and landlords cannot change
-  a listing's status (`soon_vacant` is unreachable; an occupied listing
-  can never be re-opened).
-- `expected_vacate_date` is in the schema and now displayed, but no form
-  ever collects it.
+**Second pass — the rest of the fixes:**
+- **`listings.zone` struck a third time**, in `app/profiles/[slug]/page.tsx`.
+  That query selected the nonexistent column, so it *always errored* →
+  `listings` was always null → nobody's public profile ever showed their
+  listings, and every user hit the "You haven't listed anything yet /
+  Create a Listing" empty state. That was the real cause of admins being
+  told to create listings; admins now get a plain note instead. The
+  homepage query didn't join zones either. **If you write a listings
+  query, join `zone:zones(zone_name)` and flatten it.**
+- **Dark map**: replaced the swap-in-a-dark-tile-provider approach
+  entirely. It was fragile (CartoDB started demanding an API key, Esri
+  is another dependency that can be blocked/rate-limited/missing zooms,
+  and when it fails the map is simply blank). Dark mode now applies a
+  CSS filter to `.leaflet-tile-pane` over the same tiles light mode
+  uses, so the map cannot go blank from a provider problem. `lib/mapTheme.ts`
+  and all the `MutationObserver` wiring are deleted — including the
+  StrictMode effect gotcha documented above, which no longer applies.
+- **`PhotoGallery` now has a real lightbox** — click to open, ←/→ keys,
+  Escape, thumbnail strip, body-scroll lock. It is **portalled to
+  `document.body`**: rendered in place it got trapped under the navbar's
+  stacking context because the gallery sits inside sticky/positioned
+  parents. Main image is `object-fit: cover` at 4/3 (it was `contain`,
+  which letterboxed portrait phone photos into a strip); the lightbox
+  shows the full uncropped image.
+- **Enter now sends** in comments, reviews and user ratings (all three
+  required Ctrl+Enter; messages already sent on Enter). Shift+Enter
+  makes a newline.
+- Comment votes are proper pill buttons with hit area, hover, active
+  state and tabular counts (`.vote-btn` in globals.css) rather than bare
+  icons.
+- Sleek app-wide scrollbars via `--scrollbar-thumb` tokens; the thumb is
+  drawn inside a transparent border with `background-clip: content-box`.
+- Notification dropdown used `var(--navy)` for message text — that alias
+  points at emerald, which is why every notification rendered green —
+  plus a hardcoded `#eee` border and `#f0f9ff` unread background.
+  **Note `--navy` is still used as a heading colour in ~20 places across
+  admin/bills/dashboard**, so those headings are emerald; left alone as
+  it reads as intentional, but it is not.
+- **The footer links row didn't wrap**, overflowing to 411px in a 390px
+  viewport — that gave *every page* a horizontal scroll on mobile.
+- `StatusChanger` and `ComplaintModal` are now wired up: owners get a
+  status control on their listing (so `soon_vacant` is reachable and an
+  occupied listing can be re-opened), and non-owners get a Report
+  button via `components/ReportButton.tsx`.
+
+**Third pass — more broken things found by using the app:**
+- **Comments were invisible to everyone.** Both detail pages embedded
+  `user:profiles!item_comments_user_id_fkey(...)`, but **the comment
+  tables were created by hand in the Supabase dashboard and are in no
+  migration**, so they have no FK to `profiles`. PostgREST failed the
+  *whole* query → `comments` was always `[]`. The commenter appeared to
+  see theirs only because `CommentSection` inserts optimistically into
+  local state; it vanished on reload. `lib/comments.ts` now fetches
+  authors in a second query and merges, so it no longer depends on a FK
+  that doesn't exist. **The comment tables still need to be captured in
+  a migration.**
+- **`listings.zone` struck a fourth time** in `app/profiles/[slug]/page.tsx`
+  — that query always errored, which is why nobody's public profile ever
+  listed anything and every user (admins included) got the "You haven't
+  listed anything yet / Create a Listing" empty state.
+- Sold/withdrawn items leaked onto the landing page: `/exchange` filtered
+  status client-side, the homepage didn't filter at all.
+- **Messaging was unreadable in dark mode.** `MessagesClient` had three
+  module-level constants (`EMERALD`, `EMERALD_SOFT`, `EMERALD_LIGHT`)
+  hardcoded to light-mode hex, used 23 times — incoming bubbles were pale
+  mint with near-white text. `EMERALD` was used for *both* fills and
+  link text, so it was split into `EMERALD` (fill) / `EMERALD_TEXT`.
+- **Filled buttons now use `--btn-primary-*`, not the raw accent.** The
+  accent is a light mint in dark mode, so every filled button was a
+  glaring slab. `.btn-primary`, `.btn-gold`, `.btn-success`, `.avatar`,
+  `.step-num`, `.seek-avatar` and the inline avatar fills all use the
+  deep emerald that matches `.bento-emerald`. **Don't fill a surface with
+  `var(--emerald)` and put white text on it** — use the button tokens.
+- The notification bell had no `.icon-btn` styling (bare button) while
+  every sibling icon had one. Navbar right side is now grouped:
+  activity icons (bell, messages) · divider · theme toggle · avatar,
+  with Watchlist and My Activity moved into the avatar dropdown.
+- Homepage bento had an empty grid cell; the trust card is now
+  `bento-full` with the five review dimensions as chips.
+
+**New:** `PhotoGallery` lightbox (portalled, arrow keys); `lib/activity.ts`
++ a **My Activity** dashboard tab showing comments, votes, offers, ratings
+and reviews in one reverse-chronological feed.
+
+**Polish pass:**
+- `accent-color` for range sliders was scoped to `.sidebar`, so every
+  other price/filter slider fell back to the browser's blue. Now global.
+- `ExchangeItemCard` rendered `<span className="badge">{item.zone}</span>`
+  unconditionally, so an item with no zone drew an **empty grey badge**.
+  Guarded — and the homepage items query now joins zones and the seller
+  (it was selecting `*`, so zone and seller name were always missing).
+- Footer rendered `© 2026Nestly` — JSX dropped the space around
+  `{new Date().getFullYear()}`. Built as one template string instead.
+- Navbar auth buttons used full `.btn` padding (≈44px tall) inside a 56px
+  pill nav next to 34px icon buttons; `.nav-right .btn` pins them to 36px.
+
+**Still open:**
+- `expected_vacate_date` is displayed but no form collects it.
 - The detail page fetches `owner.phone`/`owner.email` and never renders
   them — decide whether to reveal on accepted application, or stop
   fetching.
 - No `next/image` anywhere; listing photos are raw phone JPEGs.
+- `total_monthly` is stored rather than computed, so it can drift from
+  the itemized parts it's supposed to sum.
 
 **The `listings` table is empty (0 rows)** — zones 6, items 2, profiles
 5. The listing detail page could not be verified in a browser for lack

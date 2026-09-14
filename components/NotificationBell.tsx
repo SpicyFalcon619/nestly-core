@@ -99,23 +99,24 @@ export default function NotificationBell() {
 
   return (
     <div style={{ position: 'relative' }} ref={ref}>
-      <button 
+      <button
+        className="icon-btn"
         onClick={handleOpen}
-        style={{ 
-          background: 'none', border: 'none', cursor: 'pointer', 
-          color: 'var(--navy)', display: 'flex', alignItems: 'center', 
-          justifyContent: 'center', padding: '8px', borderRadius: '50%'
-        }}
+        title="Notifications"
+        aria-label="Notifications"
+        style={{ position: 'relative' }}
       >
-        <Bell size={20} />
+        <Bell size={18} />
         {unread > 0 && (
           <span style={{
-            position: 'absolute', top: 4, right: 4, 
-            background: 'var(--danger)', color: 'white', 
-            fontSize: 10, fontWeight: 'bold', 
-            borderRadius: '10px', padding: '2px 6px'
+            position: 'absolute', top: -4, right: -4,
+            background: 'var(--danger)', color: '#fff',
+            fontSize: 10, fontWeight: 700, lineHeight: 1.6,
+            minWidth: 17, height: 17, borderRadius: '10px', padding: '0 4px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: '2px solid var(--surface)',
           }}>
-            {unread}
+            {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
@@ -129,11 +130,11 @@ export default function NotificationBell() {
           display: 'flex', flexDirection: 'column',
           padding: '16px'
         }}>
-          <div style={{ fontWeight: 600, color: 'var(--navy)', borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '8px' }}>
+          <div style={{ fontWeight: 600, color: 'var(--ink)', borderBottom: '1px solid var(--border)', paddingBottom: '8px', marginBottom: '8px' }}>
             Notifications
           </div>
 
-          <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: '8px', fontSize: 13, color: 'var(--gray)' }}>
+          <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: '8px', fontSize: 13, color: 'var(--ink-mid)' }}>
             {notifications.length === 0 ? (
               <div style={{ padding: '10px 0', textAlign: 'center' }}>
                 No notifications
@@ -141,15 +142,15 @@ export default function NotificationBell() {
             ) : (
               notifications.map((n) => (
                 <div key={n.notif_id} style={{
-                  padding: '10px', 
-                  borderBottom: '1px solid #eee',
-                  background: n.is_read ? 'transparent' : '#f0f9ff',
-                  borderRadius: '4px',
+                  padding: '10px',
+                  borderBottom: '1px solid var(--border)',
+                  background: n.is_read ? 'transparent' : 'var(--emerald-soft)',
+                  borderRadius: '6px',
                   marginBottom: '2px'
                 }}>
                   <div style={{
                     fontWeight: n.is_read ? 'normal' : 'bold',
-                    color: 'var(--navy)',
+                    color: 'var(--ink)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',

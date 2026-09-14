@@ -87,7 +87,35 @@
   --panel-emerald-to:      #2E7D5A;
   --panel-emerald-ink:     #FFFFFF;
   --panel-emerald-ink-mid: rgba(255, 255, 255, 0.82);
+
+  --btn-primary-bg:    #1A5C45;
+  --btn-primary-hover: #134233;
+  --btn-primary-ink:   #FFFFFF;
+
+  /* ── Scrollbars ── */
+  --scrollbar-thumb:       rgba(15, 30, 50, 0.22);
+  --scrollbar-thumb-hover: rgba(15, 30, 50, 0.40);
 }
+
+/* ════════════════════════════════════════
+   SCROLLBARS — sleek, minimal, app-wide.
+   The thumb is drawn inside a transparent border via background-clip,
+   so it reads as a thin floating bar rather than a chunky OS gutter.
+   ════════════════════════════════════════ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
+*::-webkit-scrollbar-corner { background: transparent; }
 
 /* ════════════════════════════════════════
    DARK THEME
@@ -155,6 +183,13 @@
     --panel-emerald-to:      #1B5440;
     --panel-emerald-ink:     #EAF6F0;
     --panel-emerald-ink-mid: rgba(234, 246, 240, 0.76);
+
+    --btn-primary-bg:    #1B5440;
+    --btn-primary-hover: #236B51;
+    --btn-primary-ink:   #EAF6F0;
+
+    --scrollbar-thumb:       rgba(234, 242, 238, 0.18);
+    --scrollbar-thumb-hover: rgba(234, 242, 238, 0.34);
   }
 }
 :root[data-theme="dark"] {
@@ -216,6 +251,13 @@
   --panel-emerald-to:      #1B5440;
   --panel-emerald-ink:     #EAF6F0;
   --panel-emerald-ink-mid: rgba(234, 246, 240, 0.76);
+
+  --btn-primary-bg:    #1B5440;
+  --btn-primary-hover: #236B51;
+  --btn-primary-ink:   #EAF6F0;
+
+  --scrollbar-thumb:       rgba(234, 242, 238, 0.18);
+  --scrollbar-thumb-hover: rgba(234, 242, 238, 0.34);
 }
 
 html, body { transition: background-color 0.25s ease, color 0.25s ease; }
@@ -302,10 +344,29 @@ img { display: block; max-width: 100%; }
 
 .nav-right { display: flex; gap: 10px; align-items: center; margin-left: auto; }
 
+/* Auth buttons sit in a 56px pill navbar next to 34px icon buttons —
+   full-size .btn padding makes them tower over their neighbours. */
+.nav-right .btn {
+  height: 36px;
+  padding: 0 18px;
+  font-size: 13.5px;
+  border-radius: 9px;
+  box-shadow: none;
+}
+.nav-right .btn:hover { transform: none; box-shadow: var(--shadow-xs); }
+
+/* Separates live-activity icons (bell, messages) from account/settings */
+.nav-divider {
+  width: 1px; height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
 /* Avatar */
 .avatar {
   width: 38px; height: 38px; border-radius: 50%;
-  background: var(--emerald); color: #fff;
+  background: var(--btn-primary-bg); color: var(--btn-primary-ink);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 13px; letter-spacing: 0.02em;
   cursor: pointer; position: relative;
@@ -390,19 +451,24 @@ img { display: block; max-width: 100%; }
 .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .btn:active { transform: translateY(0); box-shadow: var(--shadow-xs); }
 
+/* Filled buttons use their own token rather than the raw accent: in dark mode
+   the accent is a light mint, which makes a big glaring slab. This keeps them
+   the same deep emerald as the filled panels (.bento-emerald). */
 .btn-primary {
-  background: var(--emerald);
-  color: #fff;
-  border-color: var(--emerald);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-ink);
+  border-color: var(--btn-primary-bg);
 }
-.btn-primary:hover { background: var(--emerald-dark); border-color: var(--emerald-dark); color: #fff; }
+.btn-primary:hover { background: var(--btn-primary-hover); border-color: var(--btn-primary-hover); color: var(--btn-primary-ink); }
 
+/* Kept as a separate class for its call sites, but visually identical to
+   .btn-primary — every filled action button uses the one deep emerald. */
 .btn-gold {
-  background: var(--emerald-mid);
-  color: #fff;
-  border-color: var(--emerald-mid);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-ink);
+  border-color: var(--btn-primary-bg);
 }
-.btn-gold:hover { background: var(--emerald); border-color: var(--emerald); color: #fff; }
+.btn-gold:hover { background: var(--btn-primary-hover); border-color: var(--btn-primary-hover); color: var(--btn-primary-ink); }
 
 .btn-outline {
   background: var(--surface);
@@ -419,9 +485,9 @@ img { display: block; max-width: 100%; }
 .btn-danger:hover { background: var(--danger); color: #fff; }
 
 .btn-success {
-  background: var(--emerald);
-  color: #fff;
-  border-color: var(--emerald);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-ink);
+  border-color: var(--btn-primary-bg);
 }
 
 .btn-sm  { padding: 7px 14px; font-size: 13px; border-radius: 8px; }
@@ -785,6 +851,19 @@ label:has(input[type="radio"]) {
 }
 input[type="radio"],
 input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--emerald); width: 17px; height: 17px; }
+
+/* Range sliders — without this they fall back to the browser's blue accent.
+   Set globally so filter/price sliders outside the sidebar match too. */
+input[type="range"] {
+  accent-color: var(--emerald);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  cursor: pointer;
+}
+input[type="range"]:focus { box-shadow: none; outline: none; }
+input[type="range"]:focus-visible { outline: 2px solid var(--emerald); outline-offset: 3px; }
 
 /* ════════════════════════════════════════
    GRIDS & SECTIONS
@@ -1164,7 +1243,7 @@ input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--emerald); w
 .seek-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
 .seek-avatar {
   width: 52px; height: 52px; border-radius: 50%;
-  background: var(--emerald); color: #fff;
+  background: var(--btn-primary-bg); color: var(--btn-primary-ink);
   display: flex; align-items: center; justify-content: center;
   font-weight: 700; font-size: 18px;
 }
@@ -1205,7 +1284,7 @@ input[type="checkbox"] { width: auto; margin: 0; accent-color: var(--emerald); w
 .feature p, .step p { color: var(--ink-mid); font-size: 14px; line-height: 1.65; }
 .step-num {
   width: 44px; height: 44px; border-radius: 14px;
-  background: var(--emerald); color: #fff;
+  background: var(--btn-primary-bg); color: var(--btn-primary-ink);
   font-size: 18px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 16px; box-shadow: var(--shadow-sm);
@@ -1670,7 +1749,25 @@ body.landing-page .hero { padding-top: 88px; }
 
 /* Span variants */
 .bento-wide  { grid-column: span 2; }
+.bento-full  { grid-column: 1 / -1; }
 .bento-tall  { grid-row: span 2; }
+
+/* Review dimension chips on the trust card */
+.review-dims {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 4px;
+}
+.review-dim {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 13px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-mid);
+  font-size: 12.5px; font-weight: 600;
+  white-space: nowrap;
+}
+.review-dim svg { color: var(--emerald); flex-shrink: 0; }
 
 /* Color variants — the filled emerald panel uses its own tokens because the
    plain accent is a light mint in dark mode, which turns this into a glaring
@@ -1900,6 +1997,24 @@ html.is-landlord .seeking-nav-link {
 .right-sticky-col::-webkit-scrollbar { display: none; }
 
 /* ================================================================
+   DARK MAP
+   Darkens the tile images themselves rather than swapping in a
+   dark-tile provider — a third-party dark basemap is one more thing
+   that can be unavailable, rate-limited, blocked, or missing zoom
+   levels, and when it fails the map renders blank. Only the tile pane
+   is filtered, so markers, popups, zone polygons and controls keep
+   their real colours.
+   ================================================================ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.75);
+  }
+}
+:root[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.75);
+}
+
+/* ================================================================
    LISTING DETAIL — sidebar + photo gallery
    ================================================================ */
 .right-sticky-col {
@@ -1928,17 +2043,33 @@ html.is-landlord .seeking-nav-link {
 .gallery-main {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  aspect-ratio: 4 / 3;
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--surface-2);
   border: 1px solid var(--border);
 }
+/* `cover` fills the frame instead of letterboxing portrait phone photos
+   into a strip with dead space either side. The lightbox shows the whole
+   uncropped image, so nothing is actually lost. */
 .gallery-main img {
   width: 100%; height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
+  display: block;
 }
+.gallery-expand {
+  position: absolute; top: 12px; right: 12px;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6); color: #fff;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s ease;
+  opacity: 0;
+}
+.gallery-main:hover .gallery-expand { opacity: 1; }
+.gallery-expand:hover { background: rgba(15, 23, 42, 0.85); }
 .gallery-nav {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 38px; height: 38px; border-radius: 50%;
@@ -1975,6 +2106,127 @@ html.is-landlord .seeking-nav-link {
 .gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .gallery-thumb:hover { opacity: 1; }
 .gallery-thumb.active { border-color: var(--emerald); opacity: 1; }
+
+/* ════════════════════════════════════════
+   COMMENT VOTES
+   ════════════════════════════════════════ */
+.vote-row { display: flex; align-items: center; gap: 8px; }
+.vote-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+.vote-btn:hover {
+  color: var(--ink);
+  border-color: var(--border-mid);
+  background: var(--surface-2);
+}
+.vote-btn:active { transform: scale(0.94); }
+.vote-btn .vote-count { font-variant-numeric: tabular-nums; min-width: 9px; text-align: left; }
+
+.vote-btn.voted-up {
+  color: var(--emerald);
+  border-color: color-mix(in srgb, var(--emerald) 45%, transparent);
+  background: var(--emerald-soft);
+}
+.vote-btn.voted-up:hover { background: var(--emerald-soft); color: var(--emerald); }
+.vote-btn.voted-down {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: var(--tint-red);
+}
+.vote-btn.voted-down:hover { background: var(--tint-red); color: var(--danger); }
+
+/* ════════════════════════════════════════
+   ACTIVITY FEED (dashboard)
+   ════════════════════════════════════════ */
+.activity-feed { display: flex; flex-direction: column; }
+.activity-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.activity-row:last-child { border-bottom: none; }
+.activity-icon {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--emerald-soft);
+  color: var(--emerald);
+  display: flex; align-items: center; justify-content: center;
+}
+.activity-detail {
+  margin-top: 4px;
+  font-size: 13px; color: var(--ink-mid);
+  line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.activity-time {
+  font-size: 12px; color: var(--ink-muted);
+  white-space: nowrap; flex-shrink: 0; padding-top: 2px;
+}
+
+/* ── Lightbox ── */
+.lightbox {
+  position: fixed; inset: 0; z-index: 5000;
+  background: rgba(8, 12, 10, 0.94);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 72px 80px 132px;
+  animation: overlayIn 0.18s ease;
+}
+.lightbox-img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+.lightbox-close {
+  position: absolute; top: 20px; right: 24px;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1); color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.lightbox-close:hover { background: rgba(255, 255, 255, 0.22); }
+.lightbox-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1); color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.lightbox-nav:hover { background: rgba(255, 255, 255, 0.22); }
+.lightbox-nav-prev { left: 20px; }
+.lightbox-nav-next { right: 20px; }
+.lightbox-strip {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 10px;
+  max-width: min(90vw, 760px); overflow-x: auto;
+  padding: 8px;
+}
+.lightbox-strip .gallery-thumb { border-color: rgba(255, 255, 255, 0.25); }
+.lightbox-strip .gallery-thumb.active { border-color: var(--emerald); }
+.lightbox-count {
+  position: absolute; top: 26px; left: 28px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px; font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .lightbox { padding: 64px 12px 116px; }
+  .lightbox-nav { width: 42px; height: 42px; }
+  .lightbox-nav-prev { left: 8px; }
+  .lightbox-nav-next { right: 8px; }
+}
 
 /* Key-facts strip on the listing detail page */
 .fact-grid {

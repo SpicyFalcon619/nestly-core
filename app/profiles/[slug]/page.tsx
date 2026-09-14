@@ -72,7 +72,7 @@ export default async function PublicProfilePage({ params }: Props) {
   // Fetch their active listings (up to 6)
   const { data: listings } = await supabase
     .from('listings')
-    .select('listing_id, title, photos, zone, status, costs:utility_costs(total_monthly)')
+    .select('listing_id, title, photos, zone:zones(zone_name), status, costs:utility_costs(total_monthly)')
     .eq('user_id', profile.id)
     .eq('status', 'available')
     .limit(6);
@@ -111,7 +111,7 @@ export default async function PublicProfilePage({ params }: Props) {
             ) : (
               <div style={{
                 width: 120, height: 120, borderRadius: '50%',
-                background: 'var(--emerald)', color: '#fff',
+                background: 'var(--btn-primary-bg)', color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 40, fontWeight: 700, border: '4px solid var(--border)',
               }}>
@@ -201,11 +201,13 @@ export default async function PublicProfilePage({ params }: Props) {
                     <img src={thumb} alt={l.title} className="listing-photo" loading="lazy" />
                   </div>
                   <div className="listing-body">
-                    <div className="badges">
-                      <span className="badge badge-navy">
-                        <MapPin size={12} /> {l.zone}
-                      </span>
-                    </div>
+                    {(l.zone as any)?.zone_name && (
+                      <div className="badges">
+                        <span className="badge badge-navy">
+                          <MapPin size={12} /> {(l.zone as any).zone_name}
+                        </span>
+                      </div>
+                    )}
                     <div className="listing-title">{l.title}</div>
                     <div className="price">{rent > 0 ? fmt(rent) : 'Ask'}<span> /month</span></div>
                     <div className="listing-footer">
@@ -256,14 +258,21 @@ export default async function PublicProfilePage({ params }: Props) {
         </section>
       )}
 
-      {/* Empty state — own profile with nothing listed */}
+      {/* Empty state — own profile with nothing listed. Admins can't create
+          listings or sell items, so they get a plain note instead of a pitch. */}
       {isOwnProfile && (listings?.length ?? 0) === 0 && (items?.length ?? 0) === 0 && (
         <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--ink-muted)' }}>
-          <p style={{ marginBottom: '16px' }}>You haven&apos;t listed anything yet.</p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/listings" className="btn btn-primary btn-sm">Create a Listing</Link>
-            <Link href="/exchange" className="btn btn-outline btn-sm">Sell an Item</Link>
-          </div>
+          {profile.role === 'admin' ? (
+            <p style={{ margin: 0 }}>Administrator account — listings and marketplace items are managed from the admin panel.</p>
+          ) : (
+            <>
+              <p style={{ marginBottom: '16px' }}>You haven&apos;t listed anything yet.</p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link href="/listings" className="btn btn-primary btn-sm">Create a Listing</Link>
+                <Link href="/exchange" className="btn btn-outline btn-sm">Sell an Item</Link>
+              </div>
+            </>
+          )}
         </div>
       )}
 

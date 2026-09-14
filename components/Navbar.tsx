@@ -231,22 +231,17 @@ export default function Navbar() {
           </div>
 
           <div className="nav-right">
-            <ThemeToggle />
             {!loading && (
               <>
                 {user ? (
                   <>
+                    {/* Activity — things that change and need a glance */}
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <NotificationBell />
                     </div>
-                    {user.role !== 'admin' && (
-                      <>
-                        <MessageIcon />
-                        <Link className="icon-btn" href="/dashboard?tab=watch" title="Watchlist">
-                          <Heart size={20} />
-                        </Link>
-                      </>
-                    )}
+                    {user.role !== 'admin' && <MessageIcon />}
+                    <span className="nav-divider" />
+                    <ThemeToggle />
                     <div className="avatar" id="avatarBtn" onClick={() => setAvatarOpen(!avatarOpen)} style={{ cursor: 'pointer', position: 'relative' }}>
                       {user.profile_pic ? (
                         <img src={user.profile_pic} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} alt="Avatar" />
@@ -256,6 +251,8 @@ export default function Navbar() {
                         <div className="avatar-menu open" id="avatarMenu" ref={avatarMenuRef} style={{ top: '100%', right: 0, position: 'absolute' }}>
                           {user.role !== 'admin' && <Link href="/dashboard">Dashboard</Link>}
                           <Link href="/profile">Profile</Link>
+                          {user.role !== 'admin' && <Link href="/dashboard?tab=activity">My Activity</Link>}
+                          {user.role !== 'admin' && <Link href="/dashboard?tab=watch">Watchlist</Link>}
                           {user.role !== 'admin' && <Link href="/messages">Messages</Link>}
                           {user.role !== 'admin' && <Link href="/bills">Bills</Link>}
                           {user.role === 'admin' && <Link href="/admin">Admin Panel</Link>}
@@ -268,6 +265,8 @@ export default function Navbar() {
                   </>
                 ) : (
                   <>
+                    <ThemeToggle />
+                    <span className="nav-divider" />
                     <Link className="btn btn-outline" href="/login">Login</Link>
                     <Link className="btn btn-primary" href="/register">Register</Link>
                   </>

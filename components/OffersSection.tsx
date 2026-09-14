@@ -100,7 +100,7 @@ export default function OffersSection({ offers: initialOffers, isOwner, itemId }
                 }}
               >
                 {/* Avatar */}
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0, overflow: 'hidden' }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0, overflow: 'hidden' }}>
                   {o.buyer?.profile_pic
                     ? <img src={o.buyer.profile_pic} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : initials}

@@ -88,15 +88,15 @@ export default function UserRating({ targetUserId, initialRating, totalRatings, 
                 <textarea
                   value={review}
                   onChange={e => setReview(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSubmit(); } }}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSubmit(); } }}
                   rows={3}
-                  placeholder="How was your experience? (Ctrl+Enter to submit)"
+                  placeholder="How was your experience? (Enter to submit, Shift+Enter for a new line)"
                   style={{ width: '100%' }}
                 />
               </div>
               <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                 <button type="button" className="btn btn-outline btn-block" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting || selected === 0} title="Ctrl+Enter">
+                <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting || selected === 0} title="Enter to submit">
                   {isSubmitting ? 'Submitting…' : 'Submit Rating'}
                 </button>
               </div>

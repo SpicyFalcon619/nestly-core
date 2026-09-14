@@ -30,7 +30,7 @@ export default function ExchangeContent({
 
   const filteredItems = useMemo(() => {
     let result = items.filter(it => {
-      if (it.status === 'sold') return false;
+      if (it.status !== 'available') return false;
       if (filterCat !== 'all' && it.category !== filterCat) return false;
       if (filterCond !== 'all' && it.item_condition !== filterCond) return false;
       if (filterZone !== 'all' && it.zone !== filterZone) return false;

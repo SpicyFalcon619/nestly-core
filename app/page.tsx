@@ -1,4 +1,4 @@
-import { ShieldCheck, Users, ShoppingBag, Receipt, BadgeCheck } from 'lucide-react';
+import { ShieldCheck, Users, ShoppingBag, Receipt, BadgeCheck, Sparkles, MessageCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import ListingCard from '@/components/ListingCard';
 import ExchangeItemCard from '@/components/ExchangeItemCard';
@@ -10,21 +10,31 @@ export default async function Home() {
   // Fetch latest listings
   const { data: listingsData } = await supabase
     .from('listings')
-    .select('*, costs:utility_costs(*)')
+    .select('*, zone:zones(zone_name), costs:utility_costs(*)')
     .neq('status', 'occupied')
     .limit(4)
     .order('created_at', { ascending: false });
-    
-  const listings = listingsData || [];
+
+  // zones come back as { zone_name } objects — flatten for the card
+  const listings = (listingsData || []).map((l: any) => ({
+    ...l,
+    zone: l.zone?.zone_name ?? undefined,
+  }));
 
   // Fetch latest exchange items
+  // Mirror the marketplace's filter — sold/withdrawn items shouldn't surface here
   const { data: itemsData } = await supabase
     .from('items')
-    .select('*')
+    .select('*, zone:zones(zone_name), seller:profiles!items_seller_id_fkey(name)')
+    .eq('status', 'available')
     .limit(4)
     .order('created_at', { ascending: false });
-    
-  const items = itemsData || [];
+
+  const items = (itemsData || []).map((it: any) => ({
+    ...it,
+    zone: it.zone?.zone_name ?? undefined,
+    seller_name: it.seller?.name,
+  }));
   
   // Check if user is logged in for ExchangeItemCard
   const { data: { user } } = await supabase.auth.getUser();
@@ -60,6 +70,11 @@ export default async function Home() {
               <div className="bsc-pill bsc-mid"><span>Good Match</span> <span>71%</span></div>
               <div className="bsc-pill bsc-low"><span>Low Match</span> <span>38%</span></div>
             </div>
+            <p style={{ marginTop: '16px' }}>
+              Scores are worked out before anyone moves in, so you find out you&apos;re a
+              night owl living with an early riser <em>before</em> you sign, not after.
+            </p>
+            <div className="bento-tag">8 Dimensions</div>
           </div>
 
           <div className="bento-card">
@@ -74,10 +89,21 @@ export default async function Home() {
             <p>Split monthly utility bills automatically. Track who paid, who hasn't, across every resident.</p>
           </div>
 
-          <div className="bento-card bento-wide bento-surface">
+          <div className="bento-card bento-full bento-surface">
             <div className="bento-icon bento-icon-soft"><BadgeCheck size={32} /></div>
             <h3>Verified Landlords &amp; Reviews</h3>
-            <p>NID-verified landlord badges, multi-dimension property reviews (accuracy, cleanliness, safety, value, landlord responsiveness), and a formal complaint system with admin resolution.</p>
+            <p>Landlords submit identity documents that an administrator reviews before a badge appears on their listings. Every property is then rated on five separate dimensions &mdash; so a place can&apos;t hide a bad landlord behind good photos.</p>
+            <div className="review-dims">
+              {[
+                { label: 'Listing accuracy', icon: <BadgeCheck size={14} /> },
+                { label: 'Cleanliness', icon: <Sparkles size={14} /> },
+                { label: 'Safety', icon: <ShieldCheck size={14} /> },
+                { label: 'Value for money', icon: <Receipt size={14} /> },
+                { label: 'Landlord response', icon: <MessageCircle size={14} /> },
+              ].map(d => (
+                <span key={d.label} className="review-dim">{d.icon} {d.label}</span>
+              ))}
+            </div>
             <div className="bento-tag">Trust Layer</div>
           </div>
         </div>

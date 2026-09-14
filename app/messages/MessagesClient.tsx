@@ -51,15 +51,17 @@ interface MessagesClientProps {
 // ─────────────────────────────────────────────────────────────
 // Constants & helpers
 // ─────────────────────────────────────────────────────────────
-const EMERALD       = '#1A5C45';
-const EMERALD_SOFT  = '#E8F5EE';
-const EMERALD_LIGHT = '#EEF7F2';
+const EMERALD       = 'var(--btn-primary-bg)';   // filled surfaces (bubble, badges, avatar)
+const EMERALD_INK   = 'var(--btn-primary-ink)';  // text/icons sitting on EMERALD
+const EMERALD_TEXT  = 'var(--emerald)';          // links and accent text
+const EMERALD_SOFT  = 'var(--emerald-soft)';
+const EMERALD_LIGHT = 'var(--emerald-soft)';
 
 function Avatar({ src, name, size = 40 }: { src?: string; name: string; size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
-      background: EMERALD, color: '#fff',
+      background: EMERALD, color: EMERALD_INK,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontWeight: 700, fontSize: size * 0.35,
     }}>
@@ -268,7 +270,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>Messages</span>
             {totalUnread > 0 && (
-              <span style={{ background: EMERALD, color: '#fff', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>{totalUnread}</span>
+              <span style={{ background: EMERALD, color: EMERALD_INK, borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>{totalUnread}</span>
             )}
           </div>
           <div style={{ position: 'relative' }}>
@@ -305,7 +307,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <Avatar src={pt.otherUser.profile_pic} name={pt.otherUser.name} size={42} />
                   {pt.totalUnread > 0 && (
-                    <span style={{ position: 'absolute', top: -2, right: -2, width: 15, height: 15, borderRadius: '50%', background: EMERALD, color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+                    <span style={{ position: 'absolute', top: -2, right: -2, width: 15, height: 15, borderRadius: '50%', background: EMERALD, color: EMERALD_INK, fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)' }}>
                       {pt.totalUnread > 9 ? '9+' : pt.totalUnread}
                     </span>
                   )}
@@ -321,7 +323,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                   {pt.convos.length > 0 && (
                     <div style={{ display: 'flex', gap: 3, marginTop: 2, flexWrap: 'nowrap', overflow: 'hidden' }}>
                       {pt.convos.slice(0, 2).map(c => (
-                        <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 10, color: EMERALD, background: EMERALD_SOFT, borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, fontSize: 10, color: EMERALD_TEXT, background: EMERALD_SOFT, borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           <ContextLabel conv={c} />
                         </span>
                       ))}
@@ -361,7 +363,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                 <div style={{ position: 'relative' }} ref={dealsRef}>
                   <button
                     onClick={() => setDealsOpen(v => !v)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: EMERALD, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2, fontWeight: 500 }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: EMERALD_TEXT, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2, fontWeight: 500 }}
                   >
                     {activeConvo.item_title ? <ShoppingBag size={11} /> : activeConvo.listing_title ? <Building2 size={11} /> : null}
                     {activeConvo.item_title || activeConvo.listing_title || 'General'}
@@ -386,19 +388,19 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                             fontWeight: c.id === activeConvoId ? 600 : 400,
                           }}
                         >
-                          <span style={{ color: EMERALD, flexShrink: 0 }}>
+                          <span style={{ color: EMERALD_TEXT, flexShrink: 0 }}>
                             {c.item_id ? <ShoppingBag size={13} /> : c.listing_id ? <Building2 size={13} /> : <MessageCircle size={13} />}
                           </span>
                           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {c.item_title || c.listing_title || 'General chat'}
                           </span>
                           {c.unread_count > 0 && (
-                            <span style={{ background: EMERALD, color: '#fff', borderRadius: 8, padding: '1px 5px', fontSize: 10, fontWeight: 700 }}>{c.unread_count}</span>
+                            <span style={{ background: EMERALD, color: EMERALD_INK, borderRadius: 8, padding: '1px 5px', fontSize: 10, fontWeight: 700 }}>{c.unread_count}</span>
                           )}
                           {c.item_id
-                            ? <Link href={`/exchange/${c.item_id}`} onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: EMERALD, textDecoration: 'underline', flexShrink: 0 }}>View</Link>
+                            ? <Link href={`/exchange/${c.item_id}`} onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: EMERALD_TEXT, textDecoration: 'underline', flexShrink: 0 }}>View</Link>
                             : c.listing_id
-                            ? <Link href={`/listings/${c.listing_id}`} onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: EMERALD, textDecoration: 'underline', flexShrink: 0 }}>View</Link>
+                            ? <Link href={`/listings/${c.listing_id}`} onClick={e => e.stopPropagation()} style={{ fontSize: 10, color: EMERALD_TEXT, textDecoration: 'underline', flexShrink: 0 }}>View</Link>
                             : null}
                         </button>
                       ))}
@@ -406,12 +408,12 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                   )}
                 </div>
               ) : (activeConvo.item_title || activeConvo.listing_title) ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: EMERALD, marginTop: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: EMERALD_TEXT, marginTop: 1 }}>
                   {activeConvo.item_id ? <ShoppingBag size={11} /> : <Building2 size={11} />}
                   {activeConvo.item_id
-                    ? <Link href={`/exchange/${activeConvo.item_id}`} style={{ color: EMERALD, textDecoration: 'none', fontWeight: 500 }}>{activeConvo.item_title}</Link>
+                    ? <Link href={`/exchange/${activeConvo.item_id}`} style={{ color: EMERALD_TEXT, textDecoration: 'none', fontWeight: 500 }}>{activeConvo.item_title}</Link>
                     : activeConvo.listing_id
-                    ? <Link href={`/listings/${activeConvo.listing_id}`} style={{ color: EMERALD, textDecoration: 'none', fontWeight: 500 }}>{activeConvo.listing_title}</Link>
+                    ? <Link href={`/listings/${activeConvo.listing_id}`} style={{ color: EMERALD_TEXT, textDecoration: 'none', fontWeight: 500 }}>{activeConvo.listing_title}</Link>
                     : null}
                 </div>
               ) : null}
@@ -473,7 +475,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                                 maxWidth: '66%', padding: '9px 13px',
                                 borderRadius: `${tl} ${tr} ${br} ${bl}`,
                                 background: isMine ? EMERALD : EMERALD_SOFT,
-                                color: isMine ? '#ffffff' : 'var(--ink)',
+                                color: isMine ? EMERALD_INK : 'var(--ink)',
                                 fontSize: 14, lineHeight: 1.5, wordBreak: 'break-word',
                                 boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
                               }}
@@ -483,7 +485,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3, marginTop: 3, fontSize: 10 }}>
                                   <span style={{ opacity: isMine ? 0.75 : 0.55 }}>{fmtTime(msg.created_at)}</span>
                                   {isMine && (
-                                    <CheckCheck size={10} aria-label={msg.is_read ? 'Read' : 'Sent'} style={{ color: msg.is_read ? '#ffffff' : 'rgba(255,255,255,0.45)' }} />
+                                    <CheckCheck size={10} aria-label={msg.is_read ? 'Read' : 'Sent'} style={{ color: msg.is_read ? EMERALD_INK : 'rgba(255,255,255,0.45)' }} />
                                   )}
                                 </div>
                               )}
@@ -518,7 +520,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                 style={{
                   width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                   background: input.trim() ? EMERALD : 'var(--border)',
-                  color: input.trim() ? '#fff' : 'var(--ink-muted)',
+                  color: input.trim() ? EMERALD_INK : 'var(--ink-muted)',
                   border: 'none', cursor: input.trim() ? 'pointer' : 'default',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'background 0.2s, color 0.2s',

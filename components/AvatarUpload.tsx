@@ -115,7 +115,7 @@ export default function AvatarUpload({
             width: size,
             height: size,
             borderRadius: '50%',
-            background: 'var(--emerald)',
+            background: 'var(--btn-primary-bg)',
             color: '#fff',
             display: 'flex',
             alignItems: 'center',

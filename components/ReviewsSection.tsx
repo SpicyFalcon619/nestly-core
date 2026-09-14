@@ -84,8 +84,8 @@ export default function ReviewsSection({
         <Star 
           key={i} 
           size={16} 
-          fill={i <= Math.round(score) ? '#eab308' : 'none'} 
-          color={i <= Math.round(score) ? '#eab308' : 'var(--gray)'} 
+          fill={i <= Math.round(score) ? 'var(--gold)' : 'none'} 
+          color={i <= Math.round(score) ? 'var(--gold)' : 'var(--gray)'} 
         />
       );
     }
@@ -110,8 +110,8 @@ export default function ReviewsSection({
           >
             <Star 
               size={20} 
-              fill={num <= scores[field] ? '#eab308' : 'none'} 
-              color={num <= scores[field] ? '#eab308' : 'var(--gray)'} 
+              fill={num <= scores[field] ? 'var(--gold)' : 'none'} 
+              color={num <= scores[field] ? 'var(--gold)' : 'var(--gray)'} 
             />
           </button>
         ))}
@@ -151,8 +151,8 @@ export default function ReviewsSection({
               rows={3}
               value={comment}
               onChange={e => setComment(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSubmit(); } }}
-              placeholder="Share details of your experience… (Ctrl+Enter to submit)"
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSubmit(); } }}
+              placeholder="Share details of your experience… (Enter to submit, Shift+Enter for a new line)"
             />
           </div>
 

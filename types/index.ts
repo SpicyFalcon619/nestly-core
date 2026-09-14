@@ -334,6 +334,7 @@ export interface DashboardData {
   hasPreferences: boolean;
   verifStatus: string;
   notifications?: any[];
+  activity?: import('@/lib/activity').ActivityItem[];
 }
 
 export interface AdminStats {

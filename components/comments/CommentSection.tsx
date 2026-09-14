@@ -103,7 +103,7 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
 
       {isLoggedIn ? (
         <form onSubmit={e => { e.preventDefault(); doSubmit(newComment.trim()); }} style={{ marginBottom: '28px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0, marginTop: 2 }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--btn-primary-bg)', color: 'var(--btn-primary-ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0, marginTop: 2 }}>
             You
           </div>
           <div style={{ flex: 1 }}>
@@ -112,17 +112,17 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
               value={newComment}
               onChange={e => setNewComment(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   doSubmit(newComment.trim());
                 }
               }}
-              placeholder="Ask a question or leave a comment… (Ctrl+Enter to send)"
+              placeholder="Ask a question or leave a comment…"
               style={{ width: '100%', minHeight: '72px', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', fontFamily: 'inherit', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }}
               disabled={isSubmitting}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--ink-muted)' }}>Ctrl+Enter to send</span>
+              <span style={{ fontSize: '11px', color: 'var(--ink-muted)' }}>Enter to send · Shift+Enter for a new line</span>
               <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting || !newComment.trim()} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Send size={14} /> {isSubmitting ? 'Posting…' : 'Post'}
               </button>
@@ -152,20 +152,26 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
                   <span style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>{fmtDate(comment.created_at)}</span>
                 </div>
                 <p style={{ margin: '0 0 10px 0', lineHeight: 1.6, fontSize: '14px' }}>{comment.content}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div className="vote-row">
                   <button
+                    type="button"
+                    className={`vote-btn ${comment.user_vote === 1 ? 'voted-up' : ''}`}
                     onClick={() => handleVote(comment.comment_id, 1)}
-                    style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: comment.user_vote === 1 ? 'var(--primary)' : 'var(--ink-muted)', padding: 0, fontSize: '13px' }}
+                    aria-pressed={comment.user_vote === 1}
+                    title={comment.user_vote === 1 ? 'Remove upvote' : 'Upvote'}
                   >
                     <ThumbsUp size={14} fill={comment.user_vote === 1 ? 'currentColor' : 'none'} />
-                    {comment.upvotes}
+                    <span className="vote-count">{comment.upvotes}</span>
                   </button>
                   <button
+                    type="button"
+                    className={`vote-btn ${comment.user_vote === -1 ? 'voted-down' : ''}`}
                     onClick={() => handleVote(comment.comment_id, -1)}
-                    style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: comment.user_vote === -1 ? 'var(--danger)' : 'var(--ink-muted)', padding: 0, fontSize: '13px' }}
+                    aria-pressed={comment.user_vote === -1}
+                    title={comment.user_vote === -1 ? 'Remove downvote' : 'Downvote'}
                   >
                     <ThumbsDown size={14} fill={comment.user_vote === -1 ? 'currentColor' : 'none'} />
-                    {comment.downvotes}
+                    <span className="vote-count">{comment.downvotes}</span>
                   </button>
                 </div>
               </div>

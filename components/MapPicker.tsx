@@ -5,7 +5,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Search, MapPin, Navigation } from 'lucide-react';
 import { toast } from 'sonner';
-import { getCurrentMapTheme, getTileConfig, watchMapTheme } from '@/lib/mapTheme';
 
 // Fix leaflet icon paths in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -41,11 +40,10 @@ export default function MapPicker({ initialLat = 23.7979, initialLng = 90.4497, 
     if (!leafletMap.current) {
       leafletMap.current = L.map(mapRef.current).setView([initialLat, initialLng], 14);
 
-      const tileConfig = getTileConfig(getCurrentMapTheme());
-      tileLayer.current = L.tileLayer(tileConfig.url, {
+      tileLayer.current = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
         maxZoom: 20,
-        subdomains: tileConfig.subdomains,
-        attribution: tileConfig.attribution
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+        attribution: '&copy; Google Maps'
       }).addTo(leafletMap.current);
 
       marker.current = L.marker([initialLat, initialLng], { draggable: true }).addTo(leafletMap.current);
@@ -88,19 +86,7 @@ export default function MapPicker({ initialLat = 23.7979, initialLng = 90.4497, 
       }, 500);
     }
 
-    const stopWatching = watchMapTheme((theme) => {
-      if (!leafletMap.current) return;
-      const cfg = getTileConfig(theme);
-      if (tileLayer.current) leafletMap.current.removeLayer(tileLayer.current);
-      tileLayer.current = L.tileLayer(cfg.url, {
-        maxZoom: 20,
-        subdomains: cfg.subdomains,
-        attribution: cfg.attribution,
-      }).addTo(leafletMap.current);
-    });
-
     return () => {
-      stopWatching();
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;

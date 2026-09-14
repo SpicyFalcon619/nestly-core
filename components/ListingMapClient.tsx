@@ -5,7 +5,6 @@ import { Navigation, MapPin, Compass, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getCurrentMapTheme, getTileConfig, watchMapTheme } from '@/lib/mapTheme';
 
 // Fix Leaflet default icon paths
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -46,11 +45,10 @@ export default function ListingMapClient({ lat, lng, title }: ListingMapProps) {
 
     leafletMap.current = L.map(mapRef.current).setView([lat, lng], 15);
 
-    const tileConfig = getTileConfig(getCurrentMapTheme());
-    tileLayer.current = L.tileLayer(tileConfig.url, {
+    tileLayer.current = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom:    20,
-      subdomains: tileConfig.subdomains,
-      attribution: tileConfig.attribution,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps',
     }).addTo(leafletMap.current);
 
     L.marker([lat, lng])
@@ -60,19 +58,7 @@ export default function ListingMapClient({ lat, lng, title }: ListingMapProps) {
 
     setTimeout(() => leafletMap.current?.invalidateSize(), 400);
 
-    const stopWatching = watchMapTheme((theme) => {
-      if (!leafletMap.current) return;
-      const cfg = getTileConfig(theme);
-      if (tileLayer.current) leafletMap.current.removeLayer(tileLayer.current);
-      tileLayer.current = L.tileLayer(cfg.url, {
-        maxZoom: 20,
-        subdomains: cfg.subdomains,
-        attribution: cfg.attribution,
-      }).addTo(leafletMap.current);
-    });
-
     return () => {
-      stopWatching();
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;

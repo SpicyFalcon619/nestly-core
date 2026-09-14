@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CheckCircle, Clock, XCircle, Building2, ShoppingBag, Search, Heart, List, FileText, Settings, Bell, RefreshCw, MessageCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Building2, ShoppingBag, Search, Heart, List, FileText, Settings, Bell, RefreshCw, MessageCircle, Activity, ThumbsUp, ThumbsDown, MessageSquare, Star, Tag } from 'lucide-react';
 import type { DashboardData, Profile } from '@/types';
 import { fmt, conditionLabel, conditionColor, statusBadge, propertyTypeLabel } from '@/lib/utils';
 import ListingCard from '@/components/ListingCard';
@@ -241,6 +241,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
             { id: 'watch',        icon: <Heart size={16} />,       label: 'Watchlist' },
             { id: 'offers',       icon: <List size={16} />,        label: 'Offers' },
             { id: 'applications', icon: <FileText size={16} />,    label: 'Housing Applications' },
+            { id: 'activity',     icon: <Activity size={16} />,    label: 'My Activity' },
           ].map(({ id, icon, label }) => (
             <div key={id} className={`dashboard-nav-item ${activeTab === id ? 'active' : ''}`} onClick={() => switchTab(id)}>
               {icon} {label}
@@ -681,6 +682,47 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
           )}
 
           {/* NOTIFICATIONS TAB */}
+          {activeTab === 'activity' && (
+            <div className="card">
+              <h3 style={{ marginTop: 0, color: 'var(--navy)' }}>My Activity</h3>
+              <p style={{ color: 'var(--ink-muted)', fontSize: '14px', marginTop: 0, marginBottom: '20px' }}>
+                Everything you&apos;ve commented on, voted on, offered for and reviewed.
+              </p>
+
+              {(data.activity?.length ?? 0) === 0 ? (
+                <p style={{ color: 'var(--ink-muted)', textAlign: 'center', padding: '32px 0' }}>
+                  No activity yet. Comment on a listing or make an offer and it&apos;ll show up here.
+                </p>
+              ) : (
+                <div className="activity-feed">
+                  {data.activity!.map(a => {
+                    const icon =
+                      a.kind === 'comment' ? <MessageSquare size={15} /> :
+                      a.kind === 'vote'    ? (a.action.startsWith('Liked') ? <ThumbsUp size={15} /> : <ThumbsDown size={15} />) :
+                      a.kind === 'offer'   ? <Tag size={15} /> :
+                      a.kind === 'rating'  ? <Star size={15} /> :
+                                             <FileText size={15} />;
+                    return (
+                      <div key={a.id} className="activity-row">
+                        <span className="activity-icon">{icon}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', color: 'var(--ink)' }}>
+                            {a.action}{' '}
+                            {a.href
+                              ? <Link href={a.href} style={{ fontWeight: 600 }}>{a.subject}</Link>
+                              : <strong>{a.subject}</strong>}
+                          </div>
+                          {a.detail && <div className="activity-detail">{a.detail}</div>}
+                        </div>
+                        <span className="activity-time">{new Date(a.at).toLocaleDateString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'notifications' && (
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
