@@ -328,7 +328,7 @@ export default function AdminContent({
                     padding: '16px', 
                     borderRadius: 'var(--radius)', 
                     border: '1px solid var(--border)',
-                    backgroundColor: n.is_read ? 'white' : 'var(--surface-hover)',
+                    backgroundColor: n.is_read ? 'transparent' : 'var(--emerald-soft)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'

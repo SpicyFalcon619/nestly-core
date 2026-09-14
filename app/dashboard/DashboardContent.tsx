@@ -63,7 +63,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
 
   let verifText: React.ReactNode = 'Unverified';
   let verifColor = 'var(--gray)';
-  if (verifStatus === 'pending')  { verifText = <><Clock size={16} /> Pending</>;    verifColor = 'var(--amber)'; }
+  if (verifStatus === 'pending')  { verifText = <><Clock size={16} /> Pending</>;    verifColor = 'var(--warning)'; }
   if (verifStatus === 'approved') { verifText = <><CheckCircle size={16} /> Verified</>; verifColor = 'var(--success)'; }
   if (verifStatus === 'rejected') { verifText = <><XCircle size={16} /> Rejected</>;  verifColor = 'var(--danger)'; }
 

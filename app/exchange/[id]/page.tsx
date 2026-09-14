@@ -166,12 +166,12 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
             
             {/* Show contact info only to logged in users */}
             {isLoggedIn ? (
-              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--bg-color)', borderRadius: '8px' }}>
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px' }}>
                 <div style={{ fontSize: '14px', marginBottom: '4px' }}><strong>Email:</strong> {item.seller?.email}</div>
                 <div style={{ fontSize: '14px' }}><strong>Phone:</strong> {item.seller?.phone || 'Not provided'}</div>
               </div>
             ) : (
-              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', textAlign: 'center', fontSize: '14px' }}>
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px', textAlign: 'center', fontSize: '14px' }}>
                 <Link href="/login" style={{ color: 'var(--primary)' }}>Log in to view contact details</Link>
               </div>
             )}

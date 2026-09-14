@@ -274,6 +274,24 @@ and reviews in one reverse-chronological feed.
 - Navbar auth buttons used full `.btn` padding (≈44px tall) inside a 56px
   pill nav next to 34px icon buttons; `.nav-right .btn` pins them to 36px.
 
+**Undefined-token sweep (do this after adding any `var(--x)`):**
+`--surface-1` was not a one-off. A sweep of every `var(--token)` against
+`globals.css` found **five more referenced-but-never-defined** tokens —
+`--amber`, `--bg-color`, `--ink-dark`, `--radius-md`, `--surface-hover`
+(9 call sites across the admin document viewer, verification modal,
+SeekCard, exchange detail and dashboard). An undefined custom property
+invalidates the whole declaration, so each was silently rendering a
+transparent panel, an unstyled colour or `border-radius: 0`. They were
+repointed at real tokens rather than defining more aliases. Also deleted
+`app/page.module.css` — an unimported `create-next-app` leftover that
+was the source of 8 more phantom tokens.
+
+To re-run the check:
+```bash
+for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --include="*.css" \
+  | sed 's/var(//' | sort -u); do grep -q -- "$tok:" app/globals.css || echo "UNDEFINED: $tok"; done
+```
+
 **Still open:**
 - `expected_vacate_date` is displayed but no form collects it.
 - The detail page fetches `owner.phone`/`owner.email` and never renders

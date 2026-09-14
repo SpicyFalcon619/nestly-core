@@ -14,8 +14,11 @@ export default function DocumentViewerModal({ isOpen, onClose, documentUrl, docu
 
   if (!isOpen || !documentUrl) return null;
 
-  const isImage = documentUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i);
-  const isPdf = documentUrl.match(/\.(pdf)$/i);
+  // Match on the path only — storage URLs often carry ?token=/&download= suffixes,
+  // which would otherwise fail the extension test and hide the preview entirely.
+  const path = documentUrl.split(/[?#]/)[0];
+  const isImage = /\.(jpeg|jpg|gif|png|webp|avif)$/i.test(path);
+  const isPdf = /\.pdf$/i.test(path);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 20, 300));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 20, 10));
@@ -25,9 +28,9 @@ export default function DocumentViewerModal({ isOpen, onClose, documentUrl, docu
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px 0' }}>
         
         {/* Controls */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-hover)', padding: '12px 16px', borderRadius: 'var(--radius)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--surface-2)', padding: '12px 16px', borderRadius: 'var(--radius)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button type="button" onClick={handleZoomOut} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy)', display: 'flex' }}>
+            <button type="button" onClick={handleZoomOut} title="Zoom out" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-mid)', display: 'flex' }}>
               <ZoomOut size={20} />
             </button>
             
@@ -40,11 +43,11 @@ export default function DocumentViewerModal({ isOpen, onClose, documentUrl, docu
               style={{ width: '150px' }}
             />
             
-            <button type="button" onClick={handleZoomIn} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--navy)', display: 'flex' }}>
+            <button type="button" onClick={handleZoomIn} title="Zoom in" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-mid)', display: 'flex' }}>
               <ZoomIn size={20} />
             </button>
-            
-            <span style={{ fontSize: '14px', fontWeight: 600, minWidth: '48px', color: 'var(--navy)' }}>{zoom}%</span>
+
+            <span style={{ fontSize: '14px', fontWeight: 600, minWidth: '48px', color: 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>{zoom}%</span>
           </div>
 
           <a href={documentUrl} target="_blank" rel="noreferrer" download className="btn btn-outline btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -53,26 +56,32 @@ export default function DocumentViewerModal({ isOpen, onClose, documentUrl, docu
         </div>
 
         {/* Viewer Container */}
-        <div style={{ 
-          border: '1px solid var(--border)', 
-          borderRadius: 'var(--radius-lg)', 
-          height: '600px', 
+        <div style={{
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          height: '600px',
           overflow: 'auto',
-          backgroundColor: '#e5e7eb', // subtle gray background for contrast
+          backgroundColor: 'var(--surface-2)',
+          padding: '12px',
           display: 'flex',
           justifyContent: zoom <= 100 ? 'center' : 'flex-start',
           alignItems: zoom <= 100 ? 'center' : 'flex-start'
         }}>
           {isImage ? (
-            <img 
-              src={documentUrl} 
-              alt="Verification Document" 
-              style={{ 
-                width: `${zoom}%`, 
-                height: 'auto', 
+            <img
+              src={documentUrl}
+              alt="Verification Document"
+              style={{
+                width: `${zoom}%`,
+                height: 'auto',
+                // At or below 100% the document should fit the frame rather than
+                // sit in a tall band of dead space; past 100% it overflows and scrolls.
+                maxHeight: zoom <= 100 ? '100%' : 'none',
+                objectFit: 'contain',
                 transition: 'width 0.2s ease-out',
-                display: 'block'
-              }} 
+                display: 'block',
+                borderRadius: '6px'
+              }}
             />
           ) : isPdf ? (
             <iframe 

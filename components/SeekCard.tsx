@@ -24,7 +24,7 @@ export default function SeekCard({ post, isLoggedIn }: SeekCardProps) {
     <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <div>
-          <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink-dark)', marginBottom: '4px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
             {post.user_name || 'Anonymous User'}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--gray)', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -39,7 +39,7 @@ export default function SeekCard({ post, isLoggedIn }: SeekCardProps) {
         </div>
       </div>
       
-      <div style={{ padding: '12px', backgroundColor: 'var(--bg-color)', borderRadius: '8px', marginBottom: '16px' }}>
+      <div style={{ padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px', marginBottom: '16px' }}>
         <div className="grid-2" style={{ gap: '12px' }}>
           <div>
             <div style={{ fontSize: '12px', color: 'var(--gray)' }}>Looking for</div>

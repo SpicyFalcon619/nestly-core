@@ -55,7 +55,7 @@ export default function VerificationModal({ isOpen, onClose, userId, onSuccess }
     <Modal isOpen={isOpen} onClose={onClose} title="Submit Identity Verification">
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '10px 0' }}>
         
-        <div style={{ backgroundColor: 'var(--surface-hover)', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+        <div style={{ backgroundColor: 'var(--surface-2)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <h4 style={{ margin: '0 0 8px 0', color: 'var(--navy)', fontSize: '15px' }}>Why is this required?</h4>
           <p style={{ margin: 0, fontSize: '14px', color: 'var(--gray)' }}>
             To keep Nestly safe, everyone must verify their identity before creating listings or communicating with landlords. Your documents are securely stored and only accessible by administrators.
