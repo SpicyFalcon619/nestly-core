@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Link as LinkIcon } from 'lucide-react';
+import { Link as LinkIcon, MapPin } from 'lucide-react';
 import { fmt, conditionLabel, conditionColor, placeholderPhoto } from '@/lib/utils';
 import type { Item } from '@/types';
 
@@ -21,15 +21,25 @@ export default function ExchangeItemCard({ item, isLoggedIn }: { item: Item; isL
         />
       </div>
       <div className="listing-body">
+        {/* Condition stays a chip — it's the quality signal buyers scan for.
+            Category and zone are metadata and read better as a quiet line. */}
         <div className="badges">
-          <span className="badge badge-navy">{item.category}</span>
           <span className={`badge ${conditionColor(item.item_condition)}`}>{conditionLabel(item.item_condition)}</span>
-          {item.zone && <span className="badge badge-gray">{item.zone}</span>}
           {item.listing_id && (
             <span className="badge badge-gold">
               <LinkIcon style={{ width: '15px', height: '15px' }} /> Linked Flat
             </span>
           )}
+        </div>
+
+        <div className="listing-metaline">
+          {item.zone && (
+            <>
+              <span className="listing-metaline-strong"><MapPin size={12} /> {item.zone}</span>
+              <span aria-hidden="true">·</span>
+            </>
+          )}
+          <span style={{ textTransform: 'capitalize' }}>{item.category}</span>
         </div>
         <div className="listing-title">{item.title}</div>
         <div className="price">{fmt(item.asking_price)}</div>

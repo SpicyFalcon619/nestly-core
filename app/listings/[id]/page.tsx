@@ -233,17 +233,20 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                           gap: '8px',
                           padding: '10px 14px',
                           borderRadius: '8px',
-                          background: has ? 'var(--primary-light, #EEF7F2)' : 'var(--surface-1)',
-                          color: has ? 'var(--primary)' : 'var(--ink-muted)',
+                          // Missing amenities are called out in red rather than greyed
+                          // out — "this place has no lift" is information worth seeing.
+                          background: has ? 'var(--emerald-soft)' : 'var(--tint-red)',
+                          color: has ? 'var(--emerald)' : 'var(--danger)',
+                          border: `1px solid color-mix(in srgb, ${has ? 'var(--emerald)' : 'var(--danger)'} 22%, transparent)`,
                           fontSize: '14px',
-                          fontWeight: has ? 500 : 400,
+                          fontWeight: 500,
                         }}
                       >
-                        <span style={{ opacity: has ? 1 : 0.45 }}>{icon}</span>
+                        <span style={{ display: 'flex', flexShrink: 0 }}>{icon}</span>
                         <span style={{ flex: 1 }}>{label}</span>
                         {has
-                          ? <CheckCircle2 size={14} style={{ flexShrink: 0, color: 'var(--primary)' }} />
-                          : <XCircle     size={14} style={{ flexShrink: 0, opacity: 0.3 }} />
+                          ? <CheckCircle2 size={14} style={{ flexShrink: 0 }} />
+                          : <XCircle     size={14} style={{ flexShrink: 0 }} />
                         }
                       </div>
                     );

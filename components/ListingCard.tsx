@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, User, Bath, Zap, Sofa } from 'lucide-react';
+import { ShieldCheck, User, Bath, Zap, Sofa, MapPin } from 'lucide-react';
 import type { Listing } from '@/types';
 import { fmt, propertyTypeLabel, statusColor, statusLabel } from '@/lib/utils';
 
@@ -9,10 +9,6 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   const thumbnail = listing.photos && listing.photos.length > 0 ? listing.photos[0] : placeholderSvg;
   const totalRent = listing.costs ? listing.costs.total_monthly : 0;
   const freeRooms = Math.max(0, (listing.total_rooms || 0) - (listing.current_occupancy || 0));
-
-  const typeBadge = listing.listing_type === 'peer_listing'
-    ? <span className="badge badge-blue">Student Listed</span>
-    : <span className="badge badge-navy">Landlord Listed</span>;
 
   const genderLabel = listing.gender_pref === 'female'
     ? 'Female only'
@@ -41,11 +37,19 @@ export default function ListingCard({ listing }: { listing: Listing }) {
       </div>
 
       <div className="listing-body">
-        {/* Badges row — only render non-empty badges */}
-        <div className="badges" style={{ flexWrap: 'wrap', gap: '4px' }}>
-          {listing.zone && <span className="badge badge-navy">{listing.zone}</span>}
-          {typeBadge}
-          <span className="badge badge-gray">{propertyTypeLabel(listing.property_type)}</span>
+        {/* Zone / type / who listed it are metadata, not status — a quiet meta
+            line reads better than three pastel chips, and leaves the photo
+            badges (Verified, Availability) as the only things that shout. */}
+        <div className="listing-metaline">
+          {listing.zone && (
+            <>
+              <span className="listing-metaline-strong"><MapPin size={12} /> {listing.zone}</span>
+              <span aria-hidden="true">·</span>
+            </>
+          )}
+          <span>{propertyTypeLabel(listing.property_type)}</span>
+          <span aria-hidden="true">·</span>
+          <span>{listing.listing_type === 'peer_listing' ? 'Student listed' : 'Landlord listed'}</span>
         </div>
 
         <div className="listing-title">{listing.title}</div>

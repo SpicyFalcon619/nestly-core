@@ -335,6 +335,18 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
   profiles (e.g. the admin) render as plain text. `fetchCommentsWithAuthors`
   selects those two extra columns.
 
+- **Card tags reworked.** Listing cards rendered zone / property type /
+  listed-by as three pastel `.badge` chips that wrapped to two lines and
+  looked washed out in light mode. Those three are *metadata*, not
+  status, so they're now one quiet `.listing-metaline`
+  (`📍 Shatarkul · Full Mess · Landlord listed`) — which also leaves the
+  photo-overlay badges (Verified / availability) as the only loud things
+  on the card. Same treatment on `ExchangeItemCard`, except **condition
+  stays a chip** since that's the quality signal buyers scan for.
+- Missing amenities on the detail page were greyed out at 30% opacity
+  and easy to miss; they're now red with an X ("no lift" is information
+  worth seeing), present ones green with a check.
+
 Not yet started: #5 saved searches, #6 zone-average comparison,
 #7 similar listings / share / breadcrumb, #8 multi-zone + filter chips,
 #10 email notifications + application withdrawal.
