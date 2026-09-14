@@ -52,7 +52,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: '40px 5%' }}>
       <h1 className="page-title">My Profile</h1>
       <ProfileContent 
         initialProfile={profile} 

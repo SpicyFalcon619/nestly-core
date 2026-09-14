@@ -17,22 +17,22 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; sub: 
     icon: <Clock size={20} />,
     label: 'Application Sent',
     sub: 'Your application is pending. You\'ll be notified when the landlord responds.',
-    color: '#d97706',
-    bg: '#fffbeb',
+    color: 'var(--tint-amber-ink)',
+    bg: 'var(--tint-amber)',
   },
   accepted: {
     icon: <CheckCircle2 size={20} />,
     label: 'Application Accepted!',
     sub: 'Congratulations! The landlord accepted your application. Contact them to proceed.',
-    color: '#059669',
-    bg: '#f0fdf4',
+    color: 'var(--tint-green-ink)',
+    bg: 'var(--tint-green)',
   },
   rejected: {
     icon: <XCircle size={20} />,
     label: 'Application Declined',
     sub: 'Your previous application was declined. You may apply again below.',
-    color: '#dc2626',
-    bg: '#fef2f2',
+    color: 'var(--danger)',
+    bg: 'var(--tint-red)',
   },
 };
 
@@ -49,7 +49,7 @@ export default function ApplicationForm({ listingId, ownerId, listingTitle, exis
         padding: '16px',
         borderRadius: '10px',
         background: cfg.bg,
-        border: `1.5px solid ${cfg.color}33`,
+        border: `1.5px solid color-mix(in srgb, ${cfg.color} 30%, transparent)`,
         display: 'flex',
         alignItems: 'flex-start',
         gap: '12px',
@@ -83,7 +83,7 @@ export default function ApplicationForm({ listingId, ownerId, listingTitle, exis
   return (
     <form onSubmit={handleApply}>
       {status === 'rejected' && (
-        <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fca5a5', fontSize: '13px', color: '#dc2626', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--tint-red)', border: '1px solid color-mix(in srgb, var(--danger) 35%, transparent)', fontSize: '13px', color: 'var(--danger)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <XCircle size={14} /> Previous application was declined — you may apply again.
         </div>
       )}

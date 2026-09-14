@@ -23,7 +23,7 @@ export default async function NotificationsPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: '40px 5%' }}>
       <h1 className="page-title">Notifications</h1>
       <NotificationsContent initialNotifications={notifications || []} />
     </div>

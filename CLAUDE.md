@@ -113,6 +113,88 @@ switcher. Things worth knowing before touching this again:
   gave `.bento-icon` a bordered chip treatment instead of a bare icon —
   minor de-cliché pass, not the full redesign below.
 
+## Listings audit + fixes (2026-09-14)
+
+Redesign directions were shown and rejected — **keep the current visual
+design**; work moved to correctness and missing functionality. Fixed:
+
+- **`--surface-1` was never defined** but is referenced in ~11 places
+  (listing detail, messages, profile, comments, offers, exchange). An
+  undefined custom property makes the whole declaration invalid, so all
+  of those "inset panel" backgrounds were rendering transparent. Now
+  defined in all three theme blocks in `globals.css`.
+- **`listings.zone` doesn't exist as a column.** Every other page joins
+  `zone:zones(zone_name)`; both listing pages didn't — so cards never
+  showed a zone badge and the detail page rendered an empty badge with
+  a lone map-pin. Both queries now join it and flatten `{zone_name}` to
+  a string (PostgREST returns an object, not a string — flatten it or
+  React throws).
+- **Browse filters were applied after pagination.** `page.tsx` paged in
+  the DB, then filtered budget/amenities and sorted by cost in JS over
+  those 10 rows — so filters silently lied and `totalPages` came from
+  an unfiltered count. Filters now run in the DB (conditional `!inner`
+  joins — never join `!inner` unconditionally or listings lacking a
+  costs/amenities row vanish). Cost sorting still can't be done in
+  PostgREST (it can't order parent rows by an embedded column), so that
+  one path fetches the filtered set and pages in JS.
+- **`utility_costs.other_fees` was missing from the cost breakdown**,
+  though `CreateListingModal` does collect it — so custom fees were
+  charged but hidden, on the page whose whole pitch is "every cost
+  itemized".
+- **The bills page queried `listing_costs`, a table that doesn't
+  exist** (it's `utility_costs`) in two places, so the query errored and
+  landlords saw no listings to bill at all. Also `costs` is a to-one
+  embed (UNIQUE fk) so it's an object — `costs?.[0]` was wrong too.
+- Detail page: added a photo gallery (gallery photos were being uploaded
+  and never rendered anywhere — only `photos[0]` was ever shown), a key
+  facts strip (gender preference, rooms free/total, listing type, posted
+  / available-from — the *card* showed more than the detail page did),
+  `generateMetadata` for real per-listing titles and OG tags, an
+  occupied-listing guard on the apply form (the server already rejected
+  these, the UI didn't), and `.detail-layout` instead of an inline
+  `grid-template-columns` that had no mobile breakpoint at all.
+- `.bento-emerald` (homepage feature card AND the detail page's cost
+  breakdown) filled with the raw accent, which is a light mint in dark
+  mode — a glaring slab with white text on it. Now uses its own
+  `--panel-emerald-*` tokens: deep emerald in both themes.
+
+**Dark-mode + layout sweep** (same pass — these kept surfacing one at a
+time, so they were swept systematically rather than reactively):
+- Hardcoded light backgrounds (`'white'`, `'#fff'`, `'#f1f5f9'`) were
+  painting glaring white panels in dark mode across the seeking empty
+  state, the whole messages pane (6 spots), the notification dropdown,
+  the profile email field and the exchange detail page. All now tokens.
+  `app/exchange/[id]/page.tsx` also had body copy pinned to `#334155`,
+  near-invisible on a dark surface.
+- **`padding: '40px 0'` on `.container` was on 7 pages** (admin, bills,
+  exchange list + detail, notifications, profile, seeking) — the inline
+  style overrides the class's `5%` horizontal padding, so content ran
+  edge-to-edge at any viewport ≤1440px and touched the screen edge on
+  mobile. The pages that were right used `40px 5%`; all now match.
+  Note an inline padding also defeats the `max-width: 560px` container
+  rule, since inline styles beat media queries.
+- `components/PhotoGallery.tsx` (new) is shared by the listing detail
+  and exchange detail pages. The exchange page previously rendered
+  thumbnails styled `cursor: pointer` that had no click handler at all
+  — it's a server component, so they could never have worked.
+
+**Still broken / never wired up** (found, not fixed):
+- `components/modals/ComplaintModal.tsx` and `components/StatusChanger.tsx`
+  are both **orphaned** — never imported anywhere. So the advertised
+  "formal complaint system" has no UI path, and landlords cannot change
+  a listing's status (`soon_vacant` is unreachable; an occupied listing
+  can never be re-opened).
+- `expected_vacate_date` is in the schema and now displayed, but no form
+  ever collects it.
+- The detail page fetches `owner.phone`/`owner.email` and never renders
+  them — decide whether to reveal on accepted application, or stop
+  fetching.
+- No `next/image` anywhere; listing photos are raw phone JPEGs.
+
+**The `listings` table is empty (0 rows)** — zones 6, items 2, profiles
+5. The listing detail page could not be verified in a browser for lack
+of any listing to open.
+
 ## Pending — asked for, not yet done
 
 **A full visual/UI redesign pass** is still open. Today's session did a

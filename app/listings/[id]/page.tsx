@@ -1,20 +1,44 @@
 import { createClient } from '@/lib/supabase/server';
-import { MapPin, ShieldCheck, Bath, UtensilsCrossed, Sofa, Sunset, Car, Zap, ArrowUpDown, CheckCircle2, XCircle } from 'lucide-react';
-import { fmt, propertyTypeLabel, statusLabel, placeholderPhoto, avatarInitials } from '@/lib/utils';
+import { MapPin, ShieldCheck, Bath, UtensilsCrossed, Sofa, Sunset, Car, Zap, ArrowUpDown, CheckCircle2, XCircle, Users, DoorOpen, CalendarDays, Home } from 'lucide-react';
+import { fmt, fmtDate, propertyTypeLabel, statusLabel, statusColor, listingTypeLabel, placeholderPhoto, avatarInitials } from '@/lib/utils';
 import ApplicationForm from './ApplicationForm';
 import WatchlistButton from '@/components/WatchlistButton';
 import ReviewsSection from '@/components/ReviewsSection';
 import { notFound } from 'next/navigation';
 import ListingMap from '@/components/ListingMap';
+import PhotoGallery from '@/components/PhotoGallery';
 import CommentSection from '@/components/comments/CommentSection';
 import UserRating from '@/components/ratings/UserRating';
 import Link from 'next/link';
 import MessageButton from '@/components/MessageButton';
+import type { Metadata } from 'next';
 
-export const metadata = {
-  title: 'Listing Details - Nestly',
-  description: 'View full details for this Nestly property listing.',
-};
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('listings')
+    .select('title, address, photos, costs:utility_costs(total_monthly)')
+    .eq('listing_id', parseInt(id))
+    .single();
+
+  if (!data) return { title: 'Listing not found - Nestly' };
+
+  const total = (data as any).costs?.total_monthly;
+  const description = total
+    ? `${fmt(total)}/month all-in — ${data.address}. Every cost itemized upfront on Nestly.`
+    : `${data.address}. Every cost itemized upfront on Nestly.`;
+
+  return {
+    title: `${data.title} - Nestly`,
+    description,
+    openGraph: {
+      title: data.title,
+      description,
+      images: data.photos && data.photos.length > 0 ? [data.photos[0]] : [],
+    },
+  };
+}
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -26,6 +50,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     .from('listings')
     .select(`
       *,
+      zone:zones(zone_name),
       costs:utility_costs(*),
       amenities:listing_amenities(*),
       reviews(*),
@@ -39,7 +64,16 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   }
 
   const owner = (listing as any).owner || {};
-  const thumbnail = listing.photos && listing.photos.length > 0 ? listing.photos[0] : placeholderPhoto();
+  const zoneName = (listing as any).zone?.zone_name || null;
+  const photos: string[] = listing.photos && listing.photos.length > 0 ? listing.photos : [placeholderPhoto()];
+
+  const freeRooms = Math.max(0, (listing.total_rooms || 0) - (listing.current_occupancy || 0));
+  const genderLabel = listing.gender_pref === 'female'
+    ? 'Female only'
+    : listing.gender_pref === 'male'
+      ? 'Male only'
+      : 'Any gender';
+  const isOccupied = listing.status === 'occupied';
 
   // Check if user is logged in
   const { data: { user } } = await supabase.auth.getUser();
@@ -120,18 +154,18 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="container" style={{ padding: '40px 5%' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px' }}>
-        
+      <div className="detail-layout">
+
         {/* Left Column: Details */}
-        <div>
+        <div style={{ minWidth: 0 }}>
           <div style={{ marginBottom: '24px' }}>
             <div className="badges" style={{ marginBottom: '12px' }}>
-              <span className="badge badge-navy"><MapPin size={14}/> {listing.zone}</span>
+              {zoneName && <span className="badge badge-navy"><MapPin size={14}/> {zoneName}</span>}
               <span className="badge badge-blue">{propertyTypeLabel(listing.property_type)}</span>
-              <span className="badge badge-gray">{statusLabel(listing.status)}</span>
+              <span className={`badge ${statusColor(listing.status)}`}>{statusLabel(listing.status)}</span>
               {listing.is_verified && <span className="badge badge-gold"><ShieldCheck size={14}/> Verified</span>}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
               <div>
                 <h1 style={{ fontSize: '32px', marginBottom: '8px' }}>{listing.title}</h1>
                 <p style={{ color: 'var(--ink-muted)' }}>{listing.address}</p>
@@ -140,8 +174,35 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             </div>
           </div>
 
-          <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: '32px', height: '400px', background: '#eee' }}>
-            <img src={thumbnail} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <PhotoGallery photos={photos} title={listing.title} />
+
+          <div className="fact-grid">
+            <div className="fact">
+              <span className="fact-label">Open to</span>
+              <span className="fact-value"><Users size={15} /> {genderLabel}</span>
+            </div>
+            <div className="fact">
+              <span className="fact-label">Rooms</span>
+              <span className="fact-value">
+                <DoorOpen size={15} />
+                {freeRooms > 0
+                  ? `${freeRooms} of ${listing.total_rooms} free`
+                  : `Full (${listing.total_rooms})`}
+              </span>
+            </div>
+            <div className="fact">
+              <span className="fact-label">Listed by</span>
+              <span className="fact-value"><Home size={15} /> {listingTypeLabel(listing.listing_type)}</span>
+            </div>
+            <div className="fact">
+              <span className="fact-label">{listing.expected_vacate_date ? 'Available from' : 'Posted'}</span>
+              <span className="fact-value">
+                <CalendarDays size={15} />
+                {listing.expected_vacate_date
+                  ? fmtDate(listing.expected_vacate_date)
+                  : fmtDate(listing.created_at)}
+              </span>
+            </div>
           </div>
 
           <div className="card" style={{ padding: '32px', marginBottom: '24px' }}>
@@ -225,19 +286,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        {/* Right Column: sticky, independently scrollable, no visible scrollbar */}
-        <div className="right-sticky-col" style={{
-          position: 'sticky',
-          top: '80px',
-          maxHeight: 'calc(100vh - 100px)',
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '24px',
-          paddingBottom: '32px',
-          scrollbarWidth: 'none',
-        }}>
+        {/* Right Column: sticky on desktop, inline below 900px (see globals.css) */}
+        <div className="right-sticky-col">
 
             {/* Green card — cost breakdown only */}
             <div className="card bento-emerald" style={{ padding: '32px' }}>
@@ -263,10 +313,17 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 <span>Internet</span>
                 <span>{fmt(listing.costs?.internet_cost || 0)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.25)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span>Service Charge</span>
                 <span>{fmt((listing.costs?.maintenance_fee || 0) + (listing.costs?.caretaker_fee || 0))}</span>
               </div>
+              {(listing.costs?.other_fees || 0) > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span>Other Fees</span>
+                  <span>{fmt(listing.costs?.other_fees || 0)}</span>
+                </div>
+              )}
+              <div style={{ borderBottom: '1px solid rgba(255,255,255,0.25)', marginBottom: '20px', paddingBottom: '12px' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', fontWeight: 'bold' }}>
                 <span>Total Monthly</span>
                 <span>{fmt(listing.costs?.total_monthly || 0)}</span>
@@ -322,6 +379,19 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   <div style={{ padding: '14px', background: 'var(--surface-1)', borderRadius: '8px', textAlign: 'center', color: 'var(--ink-muted)', fontSize: '14px' }}>
                     {isAdmin ? 'Admins cannot apply for listings.' : 'This is your own listing.'}
                   </div>
+                ) : isOccupied ? (
+                  <>
+                    <div style={{ padding: '14px', background: 'var(--tint-red)', borderRadius: '8px', textAlign: 'center', color: 'var(--danger)', fontSize: '14px', fontWeight: 500 }}>
+                      This listing is fully occupied and isn&apos;t accepting applications.
+                    </div>
+                    <div style={{ marginTop: '10px' }}>
+                      <MessageButton
+                        otherUserId={listing.user_id}
+                        listingId={parseInt(id)}
+                        label="Message Landlord"
+                      />
+                    </div>
+                  </>
                 ) : (
                   <>
                     <ApplicationForm

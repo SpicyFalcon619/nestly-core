@@ -16,6 +16,7 @@
   /* ── Neutral Palette ── */
   --bg:        #F7F8F9;        /* page background — cool off-white */
   --surface:   #FFFFFF;        /* cards, panels */
+  --surface-1: #F2F4F7;        /* inset panels — empty states, sidebars, composer fields */
   --surface-2: #F2F4F7;        /* subtle inner sections */
   --border:    #E4E8EE;        /* very soft border */
   --border-mid:#D1D7E0;
@@ -80,6 +81,12 @@
   /* ── Hero/auth gradient wash ── */
   --hero-tint-1: #EEF7F2;
   --hero-tint-2: #F7FAF8;
+
+  /* ── Filled emerald panel (bento feature card, cost breakdown) ── */
+  --panel-emerald-from:    #1A5C45;
+  --panel-emerald-to:      #2E7D5A;
+  --panel-emerald-ink:     #FFFFFF;
+  --panel-emerald-ink-mid: rgba(255, 255, 255, 0.82);
 }
 
 /* ════════════════════════════════════════
@@ -98,6 +105,7 @@
 
     --bg:        #0D1512;
     --surface:   #141F1B;
+    --surface-1: #1A2622;
     --surface-2: #1A2622;
     --border:    #253430;
     --border-mid:#34473F;
@@ -142,6 +150,11 @@
 
     --hero-tint-1: #16221D;
     --hero-tint-2: #101A16;
+
+    --panel-emerald-from:    #14402F;
+    --panel-emerald-to:      #1B5440;
+    --panel-emerald-ink:     #EAF6F0;
+    --panel-emerald-ink-mid: rgba(234, 246, 240, 0.76);
   }
 }
 :root[data-theme="dark"] {
@@ -153,6 +166,7 @@
 
   --bg:        #0D1512;
   --surface:   #141F1B;
+  --surface-1: #1A2622;
   --surface-2: #1A2622;
   --border:    #253430;
   --border-mid:#34473F;
@@ -197,6 +211,11 @@
 
   --hero-tint-1: #16221D;
   --hero-tint-2: #101A16;
+
+  --panel-emerald-from:    #14402F;
+  --panel-emerald-to:      #1B5440;
+  --panel-emerald-ink:     #EAF6F0;
+  --panel-emerald-ink-mid: rgba(234, 246, 240, 0.76);
 }
 
 html, body { transition: background-color 0.25s ease, color 0.25s ease; }
@@ -1653,16 +1672,18 @@ body.landing-page .hero { padding-top: 88px; }
 .bento-wide  { grid-column: span 2; }
 .bento-tall  { grid-row: span 2; }
 
-/* Color variants */
+/* Color variants — the filled emerald panel uses its own tokens because the
+   plain accent is a light mint in dark mode, which turns this into a glaring
+   slab with unreadable white text on it. */
 .bento-emerald {
-  background: linear-gradient(135deg, var(--emerald) 0%, var(--emerald-mid) 100%);
+  background: linear-gradient(135deg, var(--panel-emerald-from) 0%, var(--panel-emerald-to) 100%);
   border-color: transparent;
-  color: #fff;
+  color: var(--panel-emerald-ink);
 }
-.bento-emerald h3 { color: #fff; }
-.bento-emerald p  { color: rgba(255,255,255,0.82); }
+.bento-emerald h3 { color: var(--panel-emerald-ink); }
+.bento-emerald p  { color: var(--panel-emerald-ink-mid); }
 .bento-emerald .bento-icon {
-  color: #fff;
+  color: var(--panel-emerald-ink);
   background: rgba(255, 255, 255, 0.14);
   border-color: rgba(255, 255, 255, 0.22);
 }
@@ -1877,5 +1898,108 @@ html.is-landlord .seeking-nav-link {
 
 /* Hide scrollbar for right sticky column while keeping scroll functional */
 .right-sticky-col::-webkit-scrollbar { display: none; }
+
+/* ================================================================
+   LISTING DETAIL — sidebar + photo gallery
+   ================================================================ */
+.right-sticky-col {
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 32px;
+  scrollbar-width: none;
+}
+/* Below the detail-layout breakpoint the column is full width — sticky and a
+   capped height would trap the apply form in its own scroll box. */
+@media (max-width: 900px) {
+  .right-sticky-col {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+}
+
+.gallery-main {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.gallery-main img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+.gallery-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: var(--shadow-md);
+  transition: all 0.15s ease;
+}
+.gallery-nav:hover { background: var(--emerald); border-color: var(--emerald); color: #fff; }
+.gallery-nav-prev { left: 12px; }
+.gallery-nav-next { right: 12px; }
+.gallery-count {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(15, 23, 42, 0.75); color: #fff;
+  font-size: 12px; font-weight: 600;
+  padding: 4px 10px; border-radius: var(--radius-full);
+  backdrop-filter: blur(4px);
+}
+.gallery-thumbs {
+  display: flex; gap: 10px; margin-top: 12px;
+  overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.gallery-thumb {
+  width: 84px; height: 60px; flex-shrink: 0;
+  border-radius: 8px; overflow: hidden;
+  border: 2px solid transparent;
+  background: var(--surface-2);
+  cursor: pointer; padding: 0;
+  transition: border-color 0.15s ease, opacity 0.15s ease;
+  opacity: 0.65;
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-thumb:hover { opacity: 1; }
+.gallery-thumb.active { border-color: var(--emerald); opacity: 1; }
+
+/* Key-facts strip on the listing detail page */
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.fact {
+  background: var(--surface);
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.fact-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--ink-muted);
+}
+.fact-value {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; font-weight: 700; color: var(--ink);
+  display: flex; align-items: center; gap: 6px;
+}
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

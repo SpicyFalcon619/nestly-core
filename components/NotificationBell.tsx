@@ -123,7 +123,7 @@ export default function NotificationBell() {
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-          background: 'white', border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)',
           width: 320, zIndex: 1000,
           display: 'flex', flexDirection: 'column',

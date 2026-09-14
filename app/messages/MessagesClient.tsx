@@ -276,7 +276,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search…"
-              style={{ width: '100%', padding: '7px 10px 7px 28px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: '#fff', boxSizing: 'border-box', color: 'var(--ink)', outline: 'none' }}
+              style={{ width: '100%', padding: '7px 10px 7px 28px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface)', boxSizing: 'border-box', color: 'var(--ink)', outline: 'none' }}
             />
           </div>
         </div>
@@ -344,10 +344,10 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
 
       {/* ── Chat panel ── */}
       {activeConvo && activePerson ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--surface)' }}>
 
           {/* Chat header */}
-          <div style={{ padding: '12px 20px', borderBottom: `1px solid var(--border)`, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, background: '#fff' }}>
+          <div style={{ padding: '12px 20px', borderBottom: `1px solid var(--border)`, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, background: 'var(--surface)' }}>
             <Avatar src={activeConvo.other_user.profile_pic} name={activeConvo.other_user.name} size={38} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>
@@ -369,7 +369,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
                     <ChevronDown size={12} style={{ transition: 'transform 0.15s', transform: dealsOpen ? 'rotate(180deg)' : 'none' }} />
                   </button>
                   {dealsOpen && (
-                    <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 9999, background: '#fff', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', padding: '6px 0', minWidth: 220 }}>
+                    <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 9999, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.12)', padding: '6px 0', minWidth: 220 }}>
                       <div style={{ padding: '6px 12px 4px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-muted)' }}>
                         All deals with {activeConvo.other_user.name}
                       </div>
@@ -500,7 +500,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
           </div>
 
           {/* Input */}
-          <div style={{ padding: '10px 16px 14px', borderTop: `1px solid var(--border)`, background: '#fff', flexShrink: 0 }}>
+          <div style={{ padding: '10px 16px 14px', borderTop: `1px solid var(--border)`, background: 'var(--surface)', flexShrink: 0 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'var(--surface-1)', borderRadius: 24, padding: '5px 5px 5px 16px', border: `1.5px solid var(--border)` }}>
               <input
                 ref={inputRef}
@@ -544,7 +544,7 @@ export default function MessagesClient({ conversations: initialConvos, currentUs
       {/* Right-click context menu */}
       {ctxMenu && (
         <div
-          style={{ position: 'fixed', top: ctxMenu.y, left: ctxMenu.x, zIndex: 99999, background: '#fff', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.15)', border: '1px solid var(--border)', padding: '4px 0', minWidth: 160 }}
+          style={{ position: 'fixed', top: ctxMenu.y, left: ctxMenu.x, zIndex: 99999, background: 'var(--surface)', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.15)', border: '1px solid var(--border)', padding: '4px 0', minWidth: 160 }}
           onMouseDown={e => e.stopPropagation()}
         >
           <button

@@ -61,7 +61,7 @@ export default function ExchangeItemDetailClient({
   if (localStatus !== 'available') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <div style={{ padding: '16px', backgroundColor: '#f1f5f9', borderRadius: '8px', textAlign: 'center', fontWeight: 500 }}>
+        <div style={{ padding: '16px', backgroundColor: 'var(--surface-2)', borderRadius: '8px', textAlign: 'center', fontWeight: 500 }}>
           This item is currently <strong>{localStatus}</strong>.
         </div>
         {isOwner && (localStatus === 'sold' || localStatus === 'withdrawn') && (

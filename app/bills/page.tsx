@@ -24,19 +24,19 @@ export default async function BillsPage() {
   if (profile.role === 'landlord') {
     const { data } = await supabase
       .from('listings')
-      .select('listing_id, title, address, zone:zones(zone_name), current_occupancy, costs:listing_costs(base_rent)')
+      .select('listing_id, title, address, zone:zones(zone_name), current_occupancy, costs:utility_costs(base_rent)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     myListings = (data || []).map((l: any) => ({
       ...l,
-      base_rent: l.costs?.[0]?.base_rent ?? 0,
+      base_rent: l.costs?.base_rent ?? 0,
       zone_name: l.zone?.zone_name ?? '',
     }));
   } else {
     // Students: listings they are accepted into
     const { data: apps } = await supabase
       .from('applications')
-      .select('listing:listings(listing_id, title, address, zone:zones(zone_name), current_occupancy, costs:listing_costs(base_rent))')
+      .select('listing:listings(listing_id, title, address, zone:zones(zone_name), current_occupancy, costs:utility_costs(base_rent))')
       .eq('applicant_id', user.id)
       .eq('status', 'accepted');
     myListings = (apps || [])
@@ -44,7 +44,7 @@ export default async function BillsPage() {
       .filter(Boolean)
       .map((l: any) => ({
         ...l,
-        base_rent: l.costs?.[0]?.base_rent ?? 0,
+        base_rent: l.costs?.base_rent ?? 0,
         zone_name: l.zone?.zone_name ?? '',
       }));
   }
@@ -93,7 +93,7 @@ export default async function BillsPage() {
   }
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: '40px 5%' }}>
       <BillsContent
         initialBills={billsData}
         myListings={myListings}

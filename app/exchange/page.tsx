@@ -36,7 +36,7 @@ export default async function ExchangePage() {
   }
 
   return (
-    <Suspense fallback={<div className="container" style={{ padding: '40px 0', textAlign: 'center' }}>Loading Exchange...</div>}>
+    <Suspense fallback={<div className="container" style={{ padding: '40px 5%', textAlign: 'center' }}>Loading Exchange...</div>}>
       <ExchangeContent 
         items={formattedItems} 
         zones={(zones as Zone[]) || []} 

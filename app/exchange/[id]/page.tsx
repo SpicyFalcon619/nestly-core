@@ -8,6 +8,7 @@ import CommentSection from '@/components/comments/CommentSection';
 import UserRating from '@/components/ratings/UserRating';
 import OffersSection from '@/components/OffersSection';
 import MessageButton from '@/components/MessageButton';
+import PhotoGallery from '@/components/PhotoGallery';
 
 export default async function ExchangeItemDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -92,10 +93,12 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
   }
 
   const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='600' height='400' fill='%23EEF7F2'/><text x='50%' y='50%' font-family='sans-serif' font-size='18' fill='%231A5C45' text-anchor='middle' dominant-baseline='middle'>No Photo</text></svg>";
-  const thumbnail = item.photos && item.photos.length > 0 ? item.photos[0] : (item.photo_url || placeholderSvg);
+  const galleryPhotos: string[] = item.photos && item.photos.length > 0
+    ? item.photos
+    : [item.photo_url || placeholderSvg];
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: '40px 5%' }}>
       <Link href="/exchange" style={{ display: 'inline-block', marginBottom: '20px', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>
         ← Back to Exchange
       </Link>
@@ -103,14 +106,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
       <div className="grid-2" style={{ alignItems: 'start', gap: '32px' }}>
         {/* Left Col: Photos */}
         <div style={{ position: 'sticky', top: '24px' }}>
-          <img src={thumbnail} alt={item.title} style={{ width: '100%', borderRadius: '12px', border: '1px solid var(--border)' }} />
-          {item.photos && item.photos.length > 1 && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '12px', overflowX: 'auto' }}>
-              {item.photos.slice(1).map((p: string, i: number) => (
-                <img key={i} src={p} alt="" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border)', cursor: 'pointer' }} />
-              ))}
-            </div>
-          )}
+          <PhotoGallery photos={galleryPhotos} title={item.title} />
         </div>
 
         {/* Right Col: Details */}
@@ -202,7 +198,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
 
           <div className="card">
             <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Description</h3>
-            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#334155' }}>{item.description}</p>
+            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--ink-mid)' }}>{item.description}</p>
           </div>
 
           {/* Message seller button — shown to logged-in non-owners */}

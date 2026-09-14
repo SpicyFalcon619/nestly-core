@@ -42,7 +42,7 @@ export default async function SeekingPage() {
   }));
 
   return (
-    <Suspense fallback={<div className="container" style={{ padding: '40px 0', textAlign: 'center' }}>Loading...</div>}>
+    <Suspense fallback={<div className="container" style={{ padding: '40px 5%', textAlign: 'center' }}>Loading...</div>}>
       <SeekingContent
         posts={formattedPosts}
         zones={(zones as Zone[]) || []}

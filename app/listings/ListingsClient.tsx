@@ -1,19 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Listing, Zone } from '@/types';
 import ListingCard from '@/components/ListingCard';
 import MapView from '@/components/MapView';
 import CustomSelect from '@/components/CustomSelect';
 import CreateListingModal from '@/components/modals/CreateListingModal';
-import { SlidersHorizontal, ChevronDown, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SlidersHorizontal, ChevronDown, MapPin, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 
 export default function ListingsClient({
   initialListings,
   zones,
   currentPage,
   totalPages,
+  totalCount,
   isLoggedIn,
   isAdmin,
 }: {
@@ -21,6 +22,7 @@ export default function ListingsClient({
   zones: Zone[];
   currentPage: number;
   totalPages: number;
+  totalCount: number;
   isLoggedIn: boolean;
   isAdmin?: boolean;
 }) {
@@ -31,6 +33,7 @@ export default function ListingsClient({
   const [type,        setType]        = useState(searchParams.get('type')       || '');
   const [budget,      setBudget]      = useState(searchParams.get('budget')     || '50000');
   const [sort,        setSort]        = useState(searchParams.get('sort')       || 'newest');
+  const [q,           setQ]           = useState(searchParams.get('q')          || '');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
 
@@ -41,6 +44,18 @@ export default function ListingsClient({
   };
   const [amenities, setAmenities] = useState<Set<string>>(initAmenities);
 
+  // Re-sync the controls when the URL changes underneath us (back/forward, or a
+  // link that carries filters) — otherwise the sidebar shows stale values.
+  useEffect(() => {
+    setZoneId(searchParams.get('zone')   || '');
+    setType(searchParams.get('type')     || '');
+    setBudget(searchParams.get('budget') || '50000');
+    setSort(searchParams.get('sort')     || 'newest');
+    setQ(searchParams.get('q')           || '');
+    const raw = searchParams.get('amenities');
+    setAmenities(raw ? new Set(raw.split(',').filter(Boolean)) : new Set());
+  }, [searchParams]);
+
   const toggleAmenity = (key: string) => {
     setAmenities(prev => {
       const next = new Set(prev);
@@ -49,19 +64,33 @@ export default function ListingsClient({
     });
   };
 
-  const applyFilters = () => {
+  const buildQuery = (overrides?: { q?: string }) => {
     const p = new URLSearchParams(searchParams.toString());
+    const nextQ = overrides?.q !== undefined ? overrides.q : q;
     if (zoneId)  p.set('zone',   zoneId);   else p.delete('zone');
     if (type)    p.set('type',   type);      else p.delete('type');
     if (budget && budget !== '50000') p.set('budget', budget); else p.delete('budget');
     if (sort && sort !== 'newest')    p.set('sort',   sort);   else p.delete('sort');
+    if (nextQ.trim()) p.set('q', nextQ.trim()); else p.delete('q');
     if (amenities.size > 0) p.set('amenities', [...amenities].join(',')); else p.delete('amenities');
     p.set('page', '1');
-    router.push(`?${p.toString()}`);
+    return p;
+  };
+
+  const applyFilters = () => router.push(`?${buildQuery().toString()}`);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(`?${buildQuery().toString()}`);
+  };
+
+  const clearSearch = () => {
+    setQ('');
+    router.push(`?${buildQuery({ q: '' }).toString()}`);
   };
 
   const resetFilters = () => {
-    setZoneId(''); setType(''); setBudget('50000'); setSort('newest');
+    setZoneId(''); setType(''); setBudget('50000'); setSort('newest'); setQ('');
     setAmenities(new Set());
     router.push('/listings');
   };
@@ -136,6 +165,7 @@ export default function ListingsClient({
             { key: 'attached_kitchen',  label: 'Kitchen' },
             { key: 'is_furnished',      label: 'Furnished' },
             { key: 'rooftop_access',    label: 'Rooftop' },
+            { key: 'parking',           label: 'Parking' },
             { key: 'power_backup',      label: 'Power Backup' },
             { key: 'lift_access',       label: 'Lift' },
           ].map(({ key, label }) => (
@@ -167,8 +197,34 @@ export default function ListingsClient({
         </aside>
 
         <main>
+          <form onSubmit={submitSearch} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-muted)', pointerEvents: 'none' }} />
+              <input
+                type="search"
+                value={q}
+                onChange={e => setQ(e.target.value)}
+                placeholder="Search by title or address…"
+                aria-label="Search listings"
+                style={{ paddingLeft: '40px', paddingRight: q ? '40px' : '14px' }}
+              />
+              {q && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  aria-label="Clear search"
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-muted)', display: 'flex', padding: 4 }}
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+            <button type="submit" className="btn btn-primary">Search</button>
+          </form>
+
           <div style={{ marginBottom: '12px', color: 'var(--gray)', fontSize: '14px' }}>
-            Showing {initialListings.length} listing{initialListings.length !== 1 ? 's' : ''} (Page {currentPage} of {totalPages})
+            {totalCount} listing{totalCount !== 1 ? 's' : ''} found
+            {totalPages > 1 && ` — page ${currentPage} of ${totalPages}`}
           </div>
 
           <div className="grid-2" id="listingsGrid">

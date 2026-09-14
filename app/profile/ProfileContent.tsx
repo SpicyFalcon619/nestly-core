@@ -202,7 +202,7 @@ export default function ProfileContent({
 
             <div className="form-group">
               <label>Email Address</label>
-              <input type="email" value={profile.email} disabled style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }} />
+              <input type="email" value={profile.email} disabled style={{ backgroundColor: 'var(--surface-2)', cursor: 'not-allowed' }} />
               <div style={{ fontSize: '12px', color: 'var(--gray)', marginTop: '4px' }}>Email cannot be changed.</div>
             </div>
 

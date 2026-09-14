@@ -43,7 +43,7 @@ export default function SeekingContent({
   }, [posts, filterType, filterZone, filterGender]);
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: '40px 5%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 className="page-title" style={{ margin: '0 0 8px 0' }}>Seeking Flatmates</h1>
@@ -104,7 +104,7 @@ export default function SeekingContent({
             <SeekCard key={post.post_id || post.id} post={post} isLoggedIn={isLoggedIn} />
           ))
         ) : (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', color: 'var(--gray)', backgroundColor: 'white', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', color: 'var(--gray)', backgroundColor: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
             No seeking posts match your filters.
           </div>
         )}

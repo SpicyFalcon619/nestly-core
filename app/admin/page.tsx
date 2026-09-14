@@ -126,7 +126,7 @@ export default async function AdminPage() {
   };
 
   return (
-    <div className="container" style={{ padding: '40px 0' }}>
+    <div className="container" style={{ padding: '40px 5%' }}>
       <h1 className="page-title">Admin Dashboard</h1>
       <AdminContent 
         stats={stats} 
