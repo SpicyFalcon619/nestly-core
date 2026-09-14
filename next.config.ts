@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
+      // demo listing photos from scripts/seed-demo.mjs
+      { protocol: "https", hostname: "picsum.photos" },
     ],
   },
 };

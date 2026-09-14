@@ -561,12 +561,34 @@ img { display: block; max-width: 100%; }
 }
 .listing-card:hover .listing-photo { transform: scale(1.04); }
 
-/* Badge overlay on the photo */
+/* Badge overlay on the photo.
+   These sit on top of an arbitrary photo, so the translucent tints used for
+   inline badges are unreadable here. They get an opaque dark scrim and light
+   text in BOTH themes — the backdrop is the photo, not the page. */
 .listing-photo-badges {
   position: absolute;
   top: 12px; left: 12px;
   display: flex; gap: 6px; flex-wrap: wrap;
+  z-index: 2;
+  max-width: calc(100% - 24px);
 }
+.listing-photo-badges .badge {
+  background: rgba(10, 15, 13, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.listing-photo-badges .badge-gold                       { color: #F5C451; }
+.listing-photo-badges .badge-green,
+.listing-photo-badges .badge-success,
+.listing-photo-badges .badge-navy                       { color: #6EE7B7; }
+.listing-photo-badges .badge-red,
+.listing-photo-badges .badge-danger                     { color: #FCA5A5; }
+.listing-photo-badges .badge-blue                       { color: #93C5FD; }
+.listing-photo-badges .badge-amber                      { color: #F5C171; }
+.listing-photo-badges .badge-gray                       { color: #D8DDE3; }
 
 .listing-body {
   padding: 20px 22px 18px;
@@ -2095,6 +2117,7 @@ html.is-landlord .seeking-nav-link {
   scrollbar-width: thin;
 }
 .gallery-thumb {
+  position: relative; /* next/image fill */
   width: 84px; height: 60px; flex-shrink: 0;
   border-radius: 8px; overflow: hidden;
   border: 2px solid transparent;
@@ -2171,6 +2194,49 @@ html.is-landlord .seeking-nav-link {
   font-size: 12px; color: var(--ink-muted);
   white-space: nowrap; flex-shrink: 0; padding-top: 2px;
 }
+
+/* ════════════════════════════════════════
+   PHOTO MANAGEMENT (edit listing)
+   ════════════════════════════════════════ */
+.edit-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+.edit-photo {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+}
+.edit-photo.is-cover { border-color: var(--emerald); }
+.edit-photo img { width: 100%; height: 100%; object-fit: cover; }
+.edit-photo-cover {
+  position: absolute; top: 6px; left: 6px;
+  background: var(--btn-primary-bg); color: var(--btn-primary-ink);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 2px 7px; border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+.edit-photo-actions {
+  position: absolute; top: 6px; right: 6px;
+  display: flex; gap: 4px;
+  opacity: 0; transition: opacity 0.15s ease;
+}
+.edit-photo:hover .edit-photo-actions,
+.edit-photo:focus-within .edit-photo-actions { opacity: 1; }
+.edit-photo-actions button {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: rgba(10, 15, 13, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.edit-photo-actions button:hover { background: var(--danger); border-color: var(--danger); }
+.edit-photo-actions button:first-child:hover { background: var(--emerald); border-color: var(--emerald); }
 
 /* ── Lightbox ── */
 .lightbox {

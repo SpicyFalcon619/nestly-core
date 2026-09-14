@@ -292,6 +292,53 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
   | sed 's/var(//' | sort -u); do grep -q -- "$tok:" app/globals.css || echo "UNDEFINED: $tok"; done
 ```
 
+## Upgrade list progress (2026-09-14)
+
+- **#2 seed data — done.** `scripts/seed-demo.mjs` inserts 3 realistic Dhaka
+  listings (with costs + amenities + multi-photo galleries) and
+  `--clean` removes them. Needs `SUPABASE_SERVICE_ROLE_KEY`; dev only.
+  This finally allowed the listing detail page to be verified in a
+  browser — it had been built blind across two sessions.
+- **#3 image optimisation — done.** `next/image` on the three hot paths
+  (ListingCard, ExchangeItemCard, PhotoGallery main + thumbs) using
+  `fill` + `sizes`. Data-URI placeholders pass `unoptimized` (the
+  optimizer rejects them), and `.gallery-thumb` needed `position:
+  relative` for `fill`. The lightbox stays a plain `<img>` on purpose —
+  it exists to show the original. `picsum.photos` added to
+  `remotePatterns` for the demo photos.
+- **#4 total_monthly drift — migration written, NOT APPLIED.**
+  `0005_utility_costs_total_trigger.sql` recomputes the total from its
+  parts on every insert/update. Deliberately a **trigger, not a
+  GENERATED column**: a generated column rejects any INSERT that
+  supplies the value, which would break `CreateListingModal` the instant
+  the migration ran. The trigger accepts and overwrites, so migration
+  and app deploy in either order.
+- **#9 contact reveal — done.** `owner.phone`/`owner.email` were fetched
+  and discarded; they now appear once the viewer's application is
+  `accepted` (or they own the listing), with a lock note otherwise.
+- Overlay badges on listing photos (`VERIFIED`, `SOON VACANT`) used the
+  translucent tint backgrounds and were unreadable over a photo. They
+  now get an opaque dark scrim with light text in **both** themes — the
+  backdrop there is the photo, not the page.
+- The detail fact read "Listed by — Landlord Listed"; the value is now
+  just "Landlord" / "Fellow student".
+
+- **Listing photos were uneditable.** `EditListingModal` covered title,
+  zone, type, address, status, rooms and description but **not photos** —
+  upload the wrong image and the only remedy was deleting the listing.
+  It now manages photos: add (multi-upload to the same `uiunest` bucket
+  path as create), remove, and "make cover" (the first entry in `photos`
+  is the thumbnail everywhere, so promoting one to the front *is* the
+  cover action).
+- Comment authors now link to their public profile, but only when the
+  author has a `profile_slug` **and** `is_public !== false` — so private
+  profiles (e.g. the admin) render as plain text. `fetchCommentsWithAuthors`
+  selects those two extra columns.
+
+Not yet started: #5 saved searches, #6 zone-average comparison,
+#7 similar listings / share / breadcrumb, #8 multi-zone + filter chips,
+#10 email notifications + application withdrawal.
+
 **Still open:**
 - `expected_vacate_date` is displayed but no form collects it.
 - The detail page fetches `owner.phone`/`owner.email` and never renders

@@ -25,7 +25,7 @@ export async function fetchCommentsWithAuthors(
   const authorIds = [...new Set(comments.map(c => c.user_id).filter(Boolean))];
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, name, profile_pic')
+    .select('id, name, profile_pic, profile_slug, is_public')
     .in('id', authorIds);
 
   const byId = new Map((profiles || []).map(p => [p.id, p]));

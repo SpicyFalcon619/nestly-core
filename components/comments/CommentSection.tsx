@@ -16,7 +16,7 @@ interface Comment {
   upvotes: number;
   downvotes: number;
   created_at: string;
-  user?: { name: string; profile_pic?: string };
+  user?: { name: string; profile_pic?: string; profile_slug?: string; is_public?: boolean };
   user_vote?: 1 | -1 | null;
 }
 
@@ -141,14 +141,32 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
         ) : (
           comments.map(comment => (
             <div key={comment.comment_id} style={{ display: 'flex', gap: '12px', paddingBottom: '20px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0, overflow: 'hidden' }}>
-                {comment.user?.profile_pic
-                  ? <img src={comment.user.profile_pic} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : avatarInitials(comment.user?.name || 'U')}
-              </div>
+              {(() => {
+                const slug = comment.user?.profile_slug;
+                const linkable = !!slug && comment.user?.is_public !== false;
+                const avatar = (
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12, flexShrink: 0, overflow: 'hidden' }}>
+                    {comment.user?.profile_pic
+                      ? <img src={comment.user.profile_pic} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : avatarInitials(comment.user?.name || 'U')}
+                  </div>
+                );
+                return linkable
+                  ? <Link href={`/profiles/${slug}`} style={{ flexShrink: 0 }}>{avatar}</Link>
+                  : avatar;
+              })()}
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600, fontSize: '14px' }}>{comment.user?.name || 'Anonymous'}</span>
+                  {comment.user?.profile_slug && comment.user?.is_public !== false ? (
+                    <Link
+                      href={`/profiles/${comment.user.profile_slug}`}
+                      style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)' }}
+                    >
+                      {comment.user.name}
+                    </Link>
+                  ) : (
+                    <span style={{ fontWeight: 600, fontSize: '14px' }}>{comment.user?.name || 'Anonymous'}</span>
+                  )}
                   <span style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>{fmtDate(comment.created_at)}</span>
                 </div>
                 <p style={{ margin: '0 0 10px 0', lineHeight: 1.6, fontSize: '14px' }}>{comment.content}</p>

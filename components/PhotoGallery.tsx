@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight, X, Expand } from 'lucide-react';
 
 export default function PhotoGallery({ photos, title }: { photos: string[]; title: string }) {
@@ -34,11 +35,15 @@ export default function PhotoGallery({ photos, title }: { photos: string[]; titl
   return (
     <div style={{ marginBottom: '32px' }}>
       <div className="gallery-main">
-        <img
+        <Image
           src={photos[active]}
           alt={`${title} — photo ${active + 1} of ${photos.length}`}
           onClick={() => setLightbox(true)}
           style={{ cursor: 'zoom-in' }}
+          fill
+          sizes="(max-width: 900px) 100vw, 60vw"
+          priority
+          unoptimized={photos[active].startsWith('data:')}
         />
 
         <button
@@ -74,7 +79,7 @@ export default function PhotoGallery({ photos, title }: { photos: string[]; titl
               aria-label={`View photo ${i + 1}`}
               aria-current={i === active}
             >
-              <img src={photo} alt="" />
+              <Image src={photo} alt="" fill sizes="84px" unoptimized={photo.startsWith('data:')} />
             </button>
           ))}
         </div>

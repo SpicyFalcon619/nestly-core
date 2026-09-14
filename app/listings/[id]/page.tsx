@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
-import { MapPin, ShieldCheck, Bath, UtensilsCrossed, Sofa, Sunset, Car, Zap, ArrowUpDown, CheckCircle2, XCircle, Users, DoorOpen, CalendarDays, Home } from 'lucide-react';
-import { fmt, fmtDate, propertyTypeLabel, statusLabel, statusColor, listingTypeLabel, placeholderPhoto, avatarInitials } from '@/lib/utils';
+import { MapPin, ShieldCheck, Bath, UtensilsCrossed, Sofa, Sunset, Car, Zap, ArrowUpDown, CheckCircle2, XCircle, Users, DoorOpen, CalendarDays, Home, Phone, Mail, Lock } from 'lucide-react';
+import { fmt, fmtDate, propertyTypeLabel, statusLabel, statusColor, placeholderPhoto, avatarInitials } from '@/lib/utils';
 import ApplicationForm from './ApplicationForm';
 import WatchlistButton from '@/components/WatchlistButton';
 import ReviewsSection from '@/components/ReviewsSection';
@@ -77,6 +77,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       ? 'Male only'
       : 'Any gender';
   const isOccupied = listing.status === 'occupied';
+  // "Listed by — Landlord Listed" reads badly; the fact label already says "by".
+  const listedByLabel = listing.listing_type === 'peer_listing' ? 'Fellow student' : 'Landlord';
 
   // Check if user is logged in
   const { data: { user } } = await supabase.auth.getUser();
@@ -186,7 +188,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             </div>
             <div className="fact">
               <span className="fact-label">Listed by</span>
-              <span className="fact-value"><Home size={15} /> {listingTypeLabel(listing.listing_type)}</span>
+              <span className="fact-value"><Home size={15} /> {listedByLabel}</span>
             </div>
             <div className="fact">
               <span className="fact-label">{listing.expected_vacate_date ? 'Available from' : 'Posted'}</span>
@@ -367,6 +369,36 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                   <div style={{ fontSize: '12px', color: 'var(--ink-muted)', textTransform: 'capitalize', marginTop: '4px' }}>{owner.role}</div>
                 </div>
               </div>
+
+              {/* Contact details are private until the landlord accepts — that
+                  acceptance is the point at which the two parties actually need
+                  to reach each other outside the app. */}
+              {(owner.phone || owner.email) && (
+                existingApplication?.status === 'accepted' || user?.id === listing.user_id ? (
+                  <div style={{ marginBottom: '16px', padding: '14px', background: 'var(--tint-green)', border: '1px solid color-mix(in srgb, var(--emerald) 30%, transparent)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: '8px' }}>
+                      Contact details
+                    </div>
+                    {owner.phone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: owner.email ? '6px' : 0 }}>
+                        <Phone size={14} style={{ color: 'var(--emerald)', flexShrink: 0 }} />
+                        <a href={`tel:${owner.phone}`}>{owner.phone}</a>
+                      </div>
+                    )}
+                    {owner.email && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', wordBreak: 'break-all' }}>
+                        <Mail size={14} style={{ color: 'var(--emerald)', flexShrink: 0 }} />
+                        <a href={`mailto:${owner.email}`}>{owner.email}</a>
+                      </div>
+                    )}
+                  </div>
+                ) : isLoggedIn && !isAdmin ? (
+                  <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--ink-muted)' }}>
+                    <Lock size={13} style={{ flexShrink: 0 }} />
+                    Contact details unlock once your application is accepted.
+                  </div>
+                ) : null
+              )}
 
               {isLoggedIn ? (
                 user?.id === listing.user_id || isAdmin ? (

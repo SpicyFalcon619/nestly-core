@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShieldCheck, User, Bath, Zap, Sofa } from 'lucide-react';
 import type { Listing } from '@/types';
 import { fmt, propertyTypeLabel, statusColor, statusLabel } from '@/lib/utils';
@@ -22,7 +23,15 @@ export default function ListingCard({ listing }: { listing: Listing }) {
   return (
     <div className="listing-card">
       <div className="listing-photo-wrap">
-        <img src={thumbnail} alt={listing.title} className="listing-photo" loading="lazy" />
+        <Image
+          src={thumbnail}
+          alt={listing.title}
+          className="listing-photo"
+          fill
+          sizes="(max-width: 560px) 100vw, (max-width: 1100px) 50vw, 25vw"
+          // inline SVG placeholders can't go through the optimizer
+          unoptimized={thumbnail.startsWith('data:')}
+        />
         <div className="listing-photo-badges">
           {listing.is_verified && (
             <span className="badge badge-gold"><ShieldCheck size={12} /> Verified</span>

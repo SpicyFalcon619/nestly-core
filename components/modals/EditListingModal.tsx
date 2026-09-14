@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import Modal from './Modal';
 import type { Zone } from '@/types';
 import CustomSelect from '@/components/CustomSelect';
+import { Star, Trash2 } from 'lucide-react';
 
 interface EditListingModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ export default function EditListingModal({ isOpen, onClose, listingId, onSuccess
   const [zones, setZones] = useState<Zone[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -53,11 +56,42 @@ export default function EditListingModal({ isOpen, onClose, listingId, onSuccess
             status: lData.status,
             description: lData.description || ''
           });
+          setPhotos(Array.isArray(lData.photos) ? lData.photos : []);
         }
       };
       fetchData();
     }
   }, [isOpen, listingId]);
+
+  // The first photo is the thumbnail everywhere in the app, so promoting one
+  // to the front is the "set as cover" action.
+  const makeCover = (url: string) => setPhotos(prev => [url, ...prev.filter(p => p !== url)]);
+  const removePhoto = (url: string) => setPhotos(prev => prev.filter(p => p !== url));
+
+  const handleAddPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setError('');
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError('You must be logged in to upload photos.'); setUploading(false); return; }
+
+    try {
+      const uploaded: string[] = [];
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop();
+        const filePath = `${user.id}/${Math.random()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('uiunest').upload(filePath, file);
+        if (upErr) throw upErr;
+        uploaded.push(supabase.storage.from('uiunest').getPublicUrl(filePath).data.publicUrl);
+      }
+      setPhotos(prev => [...prev, ...uploaded]);
+    } catch (err: any) {
+      setError(err?.message || 'Photo upload failed.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +110,7 @@ export default function EditListingModal({ isOpen, onClose, listingId, onSuccess
       total_rooms: formData.total_rooms,
       status: formData.status,
       description: formData.description,
+      photos,
     }).eq('listing_id', listingId);
 
     setLoading(false);
@@ -158,9 +193,51 @@ export default function EditListingModal({ isOpen, onClose, listingId, onSuccess
           <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3}></textarea>
         </div>
 
+        <div className="form-group">
+          <label>Photos</label>
+          {photos.length === 0 ? (
+            <p style={{ fontSize: '13px', color: 'var(--ink-muted)', margin: '0 0 10px' }}>
+              No photos yet — the listing shows a placeholder.
+            </p>
+          ) : (
+            <>
+              <p style={{ fontSize: '12px', color: 'var(--ink-muted)', margin: '0 0 10px' }}>
+                The first photo is the cover shown on listing cards.
+              </p>
+              <div className="edit-photo-grid">
+                {photos.map((url, i) => (
+                  <div key={url} className={`edit-photo ${i === 0 ? 'is-cover' : ''}`}>
+                    <img src={url} alt={`Photo ${i + 1}`} />
+                    {i === 0 && <span className="edit-photo-cover">Cover</span>}
+                    <div className="edit-photo-actions">
+                      {i !== 0 && (
+                        <button type="button" onClick={() => makeCover(url)} title="Make cover photo">
+                          <Star size={13} />
+                        </button>
+                      )}
+                      <button type="button" onClick={() => removePhoto(url)} title="Remove photo">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            disabled={uploading}
+            onChange={e => { handleAddPhotos(e.target.files); e.target.value = ''; }}
+            style={{ marginTop: '10px' }}
+          />
+          {uploading && <div style={{ fontSize: '13px', color: 'var(--ink-muted)', marginTop: '6px' }}>Uploading…</div>}
+        </div>
+
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
           <button type="button" className="btn btn-outline" onClick={onClose} disabled={loading}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</button>
+          <button type="submit" className="btn btn-primary" disabled={loading || uploading}>{loading ? 'Saving...' : 'Save Changes'}</button>
         </div>
       </form>
     </Modal>
