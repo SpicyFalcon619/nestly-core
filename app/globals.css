@@ -2309,6 +2309,65 @@ html.is-landlord .seeking-nav-link {
   .lightbox-nav-next { right: 8px; }
 }
 
+/* Active filter chips on /listings — each removes one applied filter */
+.filter-chips {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: -2px 0 16px;
+}
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 8px 5px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-mid);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.filter-chip svg { color: var(--ink-muted); transition: color 0.15s ease; }
+.filter-chip:hover { border-color: var(--danger); color: var(--danger); }
+.filter-chip:hover svg { color: var(--danger); }
+.filter-chip-clear, .link-button {
+  background: none; border: none; padding: 4px;
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  color: var(--emerald);
+  cursor: pointer;
+}
+.filter-chip-clear:hover, .link-button:hover { text-decoration: underline; }
+
+/* Breadcrumb above the listing title */
+.breadcrumb {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  font-size: 13px; color: var(--ink-muted);
+  margin-bottom: 16px;
+  min-width: 0;
+}
+.breadcrumb a { color: var(--ink-mid); font-weight: 500; }
+.breadcrumb a:hover { color: var(--emerald); }
+.breadcrumb svg { flex-shrink: 0; opacity: 0.6; }
+.breadcrumb [aria-current="page"] {
+  color: var(--ink-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 320px;
+}
+
+/* "৳850 below the average single room in Aftabnagar" — sits inside the
+   deep-emerald cost panel, which is dark in both themes. */
+.price-compare {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin-top: 18px; padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.price-compare svg { flex-shrink: 0; margin-top: 2px; }
+.price-compare-text { font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--panel-emerald-ink); }
+.price-compare-basis { font-size: 12px; margin-top: 2px; color: var(--panel-emerald-ink-mid); }
+.price-compare-below svg { color: #86EFAC; }
+.price-compare-above svg { color: #FCD34D; }
+.price-compare-even  svg { color: var(--panel-emerald-ink-mid); }
+
 /* Key-facts strip on the listing detail page */
 .fact-grid {
   display: grid;
@@ -2336,3 +2395,15 @@ html.is-landlord .seeking-nav-link {
 }
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* Saved searches — dashboard Watchlist tab */
+.saved-search-list { display: flex; flex-direction: column; }
+.saved-search-row {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+.saved-search-row:first-child { border-top: none; padding-top: 0; }
+.saved-search-label { flex: 1; min-width: 200px; font-weight: 600; color: var(--ink); }
+.saved-search-label:hover { color: var(--emerald); }
+.saved-search-date { font-size: 12px; color: var(--ink-muted); }

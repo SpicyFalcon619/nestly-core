@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { fetchUserActivity } from '@/lib/activity';
+import { savedSearchesAvailable } from '@/lib/savedSearch';
 import DashboardContent from './DashboardContent';
 import type { Profile, DashboardData, Listing, Item, Offer, Application, SeekingPost, SeekingResponse } from '@/types';
 
@@ -96,6 +97,12 @@ export default async function DashboardPage() {
 
   const activity = await fetchUserActivity(supabase, userId);
 
+  // Saved searches exist only once migration 0006 is applied.
+  const savedSearchesEnabled = await savedSearchesAvailable(supabase);
+  const { data: savedSearches } = savedSearchesEnabled
+    ? await supabase.from('saved_searches').select('id, query, label, created_at').eq('user_id', userId).order('created_at', { ascending: false })
+    : { data: [] };
+
   const dashData: DashboardData = {
     myListings: (myListings || []) as Listing[],
     myItems: (myItems || []) as Item[],
@@ -133,6 +140,8 @@ export default async function DashboardPage() {
     hasPreferences: !!hasPreferences,
     activity,
     verifStatus: verifStatus?.status || 'none',
+    savedSearchesEnabled,
+    savedSearches: savedSearches || [],
     notifications: userNotifications || []
   };
 

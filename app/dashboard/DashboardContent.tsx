@@ -13,13 +13,14 @@ import {
   acceptOffer, rejectOffer, counterOffer, withdrawOffer, acceptCounterOffer,
 } from '@/app/actions/offers';
 import {
-  acceptApplication, rejectApplication,
+  acceptApplication, rejectApplication, withdrawApplication,
   updateListingStatus, updateItemStatus, deleteListing,
   acceptSeekResponse, rejectSeekResponse,
 } from '@/app/actions/applications';
 import { toast } from 'sonner';
 import CustomSelect from '@/components/CustomSelect';
 import MessageButton from '@/components/MessageButton';
+import { deleteSavedSearch } from '@/app/actions/savedSearches';
 
 export default function DashboardContent({ data, user }: { data: DashboardData; user: Profile }) {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
   const [counterModal, setCounterModal] = useState<{ offerId: number; title: string } | null>(null);
   const [counterPrice, setCounterPrice] = useState('');
   const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [savedSearches, setSavedSearches] = useState(data.savedSearches || []);
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { const tab = searchParams.get('tab'); if (tab) setActiveTab(tab); }, [searchParams]);
@@ -129,6 +131,22 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
       if (res.listingId) {
         setMyListings(prev => prev.map(l => (l.listing_id || l.id) === res.listingId ? { ...l, status: 'occupied' } : l));
       }
+    }
+  };
+  const doDeleteSavedSearch = async (id: number) => {
+    const res = await wrap(id, () => deleteSavedSearch(id));
+    if (res?.success) {
+      toast.success('Saved search removed.');
+      setSavedSearches(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
+  const doWithdrawApp = async (listingId: number, title: string) => {
+    if (!window.confirm(`Withdraw your application for "${title}"? The landlord will be notified.`)) return;
+    const res = await wrap(listingId, () => withdrawApplication(listingId));
+    if (res?.success) {
+      toast.success('Application withdrawn.');
+      router.refresh();
     }
   };
   const doRejectApp = async (appId: number) => {
@@ -470,13 +488,45 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
 
           {/* WATCHLIST TAB */}
           {activeTab === 'watch' && (
-            <div className="card">
-              <h3 style={{ marginTop: 0, color: 'var(--navy)', marginBottom: '14px' }}>Saved Properties</h3>
-              {watched.length === 0 ? (
-                <p style={{ color: 'var(--ink-muted)', textAlign: 'center', padding: '24px 0' }}>Empty. <Link href="/listings">Browse listings</Link></p>
-              ) : (
-                <div className="grid-3">{watched.map(l => <ListingCard key={l.listing_id || l.id} listing={l} />)}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {data.savedSearchesEnabled && (
+                <div className="card">
+                  <h3 style={{ marginTop: 0, marginBottom: '6px' }}>Saved Searches</h3>
+                  <p style={{ color: 'var(--ink-muted)', fontSize: '14px', marginTop: 0, marginBottom: '16px' }}>
+                    You&apos;re notified whenever a new listing matches one of these.
+                  </p>
+                  {savedSearches.length === 0 ? (
+                    <p style={{ color: 'var(--ink-muted)', textAlign: 'center', padding: '12px 0', margin: 0 }}>
+                      None yet. Filter the <Link href="/listings">listings</Link> and choose <strong>Save search</strong>.
+                    </p>
+                  ) : (
+                    <div className="saved-search-list">
+                      {savedSearches.map(s => (
+                        <div key={s.id} className="saved-search-row">
+                          <Link href={`/listings?${s.query}`} className="saved-search-label">{s.label}</Link>
+                          <span className="saved-search-date">Saved {new Date(s.created_at).toLocaleDateString()}</span>
+                          <button
+                            type="button"
+                            className="btn btn-outline btn-sm"
+                            disabled={actionLoading === s.id}
+                            onClick={() => doDeleteSavedSearch(s.id)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
+              <div className="card">
+                <h3 style={{ marginTop: 0, color: 'var(--navy)', marginBottom: '14px' }}>Saved Properties</h3>
+                {watched.length === 0 ? (
+                  <p style={{ color: 'var(--ink-muted)', textAlign: 'center', padding: '24px 0' }}>Empty. <Link href="/listings">Browse listings</Link></p>
+                ) : (
+                  <div className="grid-3">{watched.map(l => <ListingCard key={l.listing_id || l.id} listing={l} />)}</div>
+                )}
+              </div>
             </div>
           )}
 
@@ -662,14 +712,26 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                             <td>{statusBadgeEl(a.status)}</td>
                             <td style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>{a.created_at ? new Date(a.created_at).toLocaleDateString() : ''}</td>
                             <td>
-                              {a.owner_id && (
-                                <MessageButton
-                                  otherUserId={a.owner_id}
-                                  listingId={a.listing_id}
-                                  label="Message"
-                                  className="btn btn-outline btn-sm"
-                                />
-                              )}
+                              <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                {a.owner_id && (
+                                  <MessageButton
+                                    otherUserId={a.owner_id}
+                                    listingId={a.listing_id}
+                                    label="Message"
+                                    className="btn btn-outline btn-sm"
+                                  />
+                                )}
+                                {a.status === 'pending' && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-danger btn-sm"
+                                    disabled={actionLoading === a.listing_id}
+                                    onClick={() => doWithdrawApp(a.listing_id, a.listing_title)}
+                                  >
+                                    Withdraw
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}

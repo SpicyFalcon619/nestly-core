@@ -91,24 +91,11 @@ switcher. Things worth knowing before touching this again:
   so dark mode wouldn't wash them out — if you add a new light-only
   hardcoded color anywhere, it WILL look wrong in dark mode, there's no
   automatic correction.
-- **Map tiles are theme-reactive** via `lib/mapTheme.ts`. Light mode
-  still uses the pre-existing keyless raw Google XYZ tile trick (already
-  a bit ToS-grey-area, not new). Dark mode uses Esri's free
-  `World_Dark_Gray_Base` tiles — tried CartoDB's `dark_all` first, but
-  their free anonymous tiles now show an "API KEY REQUIRED" watermark,
-  so don't reach for that. Wired into `MapComponent.tsx`,
-  `ListingMapClient.tsx`, `MapPicker.tsx` via a `MutationObserver` on
-  `data-theme` (`watchMapTheme`).
-  - **Gotcha**: `MapComponent.tsx`'s map-init `useEffect` has no cleanup
-    (the `mapRef` guard is never reset), so it's not idempotent under
-    React StrictMode's dev-only double-invoke. Any new effect that
-    returns a real cleanup function needs to live in its OWN separate
-    `useEffect`, not be added into that one — otherwise StrictMode's
-    mount→cleanup→mount dance disconnects it (e.g. a `MutationObserver`)
-    with no matching re-subscribe, and it silently never fires again.
-    `ListingMapClient.tsx` and `MapPicker.tsx` don't have this problem
-    since their init effects already fully tear down and null the map
-    ref on cleanup.
+- ~~Map tiles swapped to a dark provider via `lib/mapTheme.ts`~~ —
+  **superseded, that file is deleted.** Dark mode now CSS-filters the
+  normal tiles (see "Second pass" below). Don't reintroduce a dark tile
+  provider: CartoDB's free tiles watermark "API KEY REQUIRED", and any
+  external provider failing leaves the map blank.
 - Removed the hero's triple-stacked radial "glow orb" background and
   gave `.bento-icon` a bordered chip treatment instead of a bare icon —
   minor de-cliché pass, not the full redesign below.
@@ -347,22 +334,57 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
   and easy to miss; they're now red with an X ("no lift" is information
   worth seeing), present ones green with a check.
 
-Not yet started: #5 saved searches, #6 zone-average comparison,
-#7 similar listings / share / breadcrumb, #8 multi-zone + filter chips,
-#10 email notifications + application withdrawal.
+- **#6 price comparison — done.** Under the cost breakdown: "৳850 below
+  the average single room in Aftabnagar · Based on 3 other…". Like-for-like
+  only (same `property_type`); same zone preferred, whole city as fallback,
+  hidden below 2 comparables. Seed now has 4 Aftabnagar single rooms so it
+  actually renders.
+- **#7 similar listings / share / breadcrumb — done.** Similar listings are
+  ranked by shared zone, shared type, and price within ±25%, from the *same*
+  query as #6. `ShareButton` uses the native share sheet on phones, clipboard
+  elsewhere. `ListingBreadcrumb` returns to the exact filtered results via
+  `sessionStorage` (`LAST_RESULTS_KEY`, written by `ListingsClient`) —
+  **not** `document.referrer`, which client-side navigation never updates.
+- **#8 multi-zone + chips + full map — done.** `zone` is now a
+  comma-separated list (`.in('zone_id', …)`). Removable chips are built from
+  the **URL** (applied filters), not the sidebar draft. The map pins every
+  match, not just the current page, via a second lean query that reuses the
+  same filters (`filtered(columns)` in `page.tsx`).
+- **#10a application withdrawal — done.** `withdrawApplication(listingId)`
+  on the listing page and the dashboard's Applications Sent table.
+  `application_status` has no `withdrawn` value and applicants have no DELETE
+  policy, so the pending row is deleted with the service role — only after
+  ownership + pending status are verified through the user's own RLS client,
+  and the delete re-asserts both. The landlord is notified.
+- **#10b email — done, inactive until configured.** `lib/email.ts` sends via
+  Resend's REST API (no SDK) from `createUserNotification`, only for
+  high-signal types (applications, offers, verification, saved-search
+  matches — not comments/votes). No-op unless `RESEND_API_KEY` +
+  `EMAIL_FROM` are set; `NEXT_PUBLIC_SITE_URL` makes links absolute. User
+  text is HTML-escaped; 5s timeout so a slow provider can't stall an action.
+- **#5 saved searches + alerts — done, needs migration 0006.** Stored as a
+  *canonical* query string (`canonicalSearch` in `lib/savedSearch.ts`: fixed
+  key order, sorted lists, page/sort/defaults dropped) so equivalent searches
+  dedupe. `CreateListingModal` calls `notifySavedSearchMatches` after
+  publishing. The matcher `listingMatchesSearch` **must stay in step with the
+  filters in `app/listings/page.tsx`** — it was checked against the live page
+  on 11 queries and agreed on all. `saved_search_alerts` PK makes alerts
+  idempotent; a 30-min window stops the client-callable action re-announcing
+  old listings. The UI stays hidden until the table exists.
+  - **Gotcha:** `savedSearchesAvailable` must use a real GET. With
+    `{ head: true }`, PostgREST's "table not found" error has no body to
+    carry, so supabase-js returns `error: null` — even for a table named
+    `definitely_not_a_table`. Don't use `head: true` as an existence check.
+
+**Migrations not yet applied (checked 2026-09-17):** 0004 (zone rename),
+0005 (total_monthly trigger), 0006 (saved searches).
 
 **Still open:**
 - `expected_vacate_date` is displayed but no form collects it.
-- The detail page fetches `owner.phone`/`owner.email` and never renders
-  them — decide whether to reveal on accepted application, or stop
-  fetching.
-- No `next/image` anywhere; listing photos are raw phone JPEGs.
-- `total_monthly` is stored rather than computed, so it can drift from
-  the itemized parts it's supposed to sum.
-
-**The `listings` table is empty (0 rows)** — zones 6, items 2, profiles
-5. The listing detail page could not be verified in a browser for lack
-of any listing to open.
+- The comment tables exist in the live DB but in no migration.
+- Admin/verification screens and anything behind a login (photo editor,
+  contact reveal, withdrawal, saved-search UI) are verified by typecheck
+  and query-shape checks only — never clicked through, no test account.
 
 ## Pending — asked for, not yet done
 

@@ -8,6 +8,7 @@ import type { Zone } from '@/types';
 import CustomSelect from '@/components/CustomSelect';
 import dynamic from 'next/dynamic';
 import { createAdminNotification } from '@/app/actions/notifications';
+import { notifySavedSearchMatches } from '@/app/actions/savedSearches';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false, loading: () => <div style={{height: '300px', background: 'var(--surface-2)', color: 'var(--ink-muted)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>Loading map...</div> });
 
@@ -235,6 +236,9 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }: Creat
         `New property listing created: ${formData.title}`,
         `/admin?tab=overview`
       );
+
+      // Alert anyone whose saved search this matches. Never let it block publishing.
+      try { await notifySavedSearchMatches(listing.listing_id); } catch { /* feature may not be migrated yet */ }
 
       toast.success('Listing published successfully!');
       if (onSuccess) onSuccess();

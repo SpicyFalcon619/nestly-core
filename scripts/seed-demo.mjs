@@ -100,6 +100,68 @@ const LISTINGS = [
       rooftop_access: true, parking: true, power_backup: true, lift_access: true,
     },
   },
+  // Several comparable single rooms in one zone, so the "vs. zone average"
+  // comparison on the detail page has a real sample to work against.
+  {
+    title: 'Single room with balcony, Aftabnagar Block D',
+    zone: 'Aftabnagar',
+    address: 'Block D, Road 2, Aftabnagar, Dhaka 1212',
+    lat: 23.7668, lng: 90.4356,
+    listing_type: 'full_property', property_type: 'single_room',
+    gender_pref: 'male', total_rooms: 3, current_occupancy: 2,
+    status: 'available', is_verified: false,
+    description: 'Corner room with a balcony facing the lake road. Shared kitchen and two bathrooms between three tenants.',
+    photos: photo('nestly-aftab-d', 3),
+    costs: {
+      base_rent: 9000, electricity_amount: 1100, electricity_type: 'individual',
+      gas_bill: 450, water_bill: 300, internet_cost: 700,
+      maintenance_fee: 500, caretaker_fee: 250, other_fees: 0,
+    },
+    amenities: {
+      attached_bathroom: false, attached_kitchen: true, is_furnished: true,
+      rooftop_access: true, parking: false, power_backup: true, lift_access: true,
+    },
+  },
+  {
+    title: 'Budget single room near Aftabnagar main gate',
+    zone: 'Aftabnagar',
+    address: 'Main Gate Road, Aftabnagar, Dhaka 1212',
+    lat: 23.7654, lng: 90.4331,
+    listing_type: 'peer_listing', property_type: 'single_room',
+    gender_pref: 'any', total_rooms: 5, current_occupancy: 4,
+    status: 'available', is_verified: false,
+    description: 'Cheapest room on this side of Aftabnagar. No frills — a bed, a desk, a fan and a shared bathroom down the hall.',
+    photos: photo('nestly-aftab-gate', 2),
+    costs: {
+      base_rent: 5000, electricity_amount: 700, electricity_type: 'shared',
+      gas_bill: 350, water_bill: 200, internet_cost: 450,
+      maintenance_fee: 200, caretaker_fee: 150, other_fees: 0,
+    },
+    amenities: {
+      attached_bathroom: false, attached_kitchen: true, is_furnished: false,
+      rooftop_access: false, parking: false, power_backup: false, lift_access: false,
+    },
+  },
+  {
+    title: 'Quiet single room for final-year students, Aftabnagar',
+    zone: 'Aftabnagar',
+    address: 'Block B, Road 7, Aftabnagar, Dhaka 1212',
+    lat: 23.7673, lng: 90.4318,
+    listing_type: 'full_property', property_type: 'single_room',
+    gender_pref: 'female', total_rooms: 4, current_occupancy: 2,
+    status: 'available', is_verified: true,
+    description: 'Strictly quiet building — no music after 10pm. Popular with final-year students during thesis season.',
+    photos: photo('nestly-aftab-b', 4),
+    costs: {
+      base_rent: 11000, electricity_amount: 1300, electricity_type: 'individual',
+      gas_bill: 500, water_bill: 350, internet_cost: 800,
+      maintenance_fee: 600, caretaker_fee: 300, other_fees: 150,
+    },
+    amenities: {
+      attached_bathroom: true, attached_kitchen: true, is_furnished: true,
+      rooftop_access: true, parking: true, power_backup: true, lift_access: true,
+    },
+  },
 ];
 
 const TITLES = LISTINGS.map(l => l.title);

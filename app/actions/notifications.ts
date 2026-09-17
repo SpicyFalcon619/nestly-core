@@ -2,6 +2,7 @@
 
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { sendNotificationEmail, shouldEmail } from '@/lib/email';
 
 // Internal helper to create a notification for all admins
 export async function createAdminNotification(type: string, message: string, link: string) {
@@ -48,6 +49,17 @@ export async function createUserNotification(userId: string, type: string, messa
       link,
       is_read: false
     });
+
+    if (shouldEmail(type)) {
+      const { data: recipient } = await adminSupabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+      if (recipient?.email) {
+        await sendNotificationEmail({ to: recipient.email, type, message, link });
+      }
+    }
   } catch (error) {
     console.error("Failed to create user notification:", error);
   }

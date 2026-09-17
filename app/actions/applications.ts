@@ -1,8 +1,58 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { createUserNotification } from './notifications';
 import { revalidatePath } from 'next/cache';
+
+/**
+ * Lets an applicant take back a pending application. Keyed by listing because
+ * submitApplication already guarantees at most one pending application per
+ * applicant per listing.
+ */
+export async function withdrawApplication(listingId: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthorized' };
+
+  // Read through the user's own client so RLS proves they can see this application.
+  const { data: app } = await supabase
+    .from('applications')
+    .select('application_id, listing:listings!inner(listing_id, title, user_id)')
+    .eq('listing_id', listingId)
+    .eq('applicant_id', user.id)
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  if (!app) return { error: 'No pending application to withdraw.' };
+
+  // application_status has no 'withdrawn' value and there is no DELETE policy for
+  // applicants, so the row is removed with the service role. That is only safe
+  // because ownership and pending status were verified above — and the delete
+  // re-asserts both, so it can't widen to anyone else's row.
+  const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+  const { error } = await admin
+    .from('applications')
+    .delete()
+    .eq('application_id', app.application_id)
+    .eq('applicant_id', user.id)
+    .eq('status', 'pending');
+
+  if (error) return { error: error.message };
+
+  const listing = app.listing as any;
+  const { data: applicant } = await supabase.from('profiles').select('name').eq('id', user.id).single();
+  await createUserNotification(
+    listing.user_id,
+    'application_withdrawn',
+    `${applicant?.name || 'An applicant'} withdrew their application for "${listing.title}".`,
+    `/dashboard?tab=applications`
+  );
+
+  revalidatePath(`/listings/${listingId}`);
+  revalidatePath('/dashboard');
+  return { success: true };
+}
 
 export async function submitApplication(listingId: number, ownerId: string, listingTitle: string, message: string) {
   const supabase = await createClient();

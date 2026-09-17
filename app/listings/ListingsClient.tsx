@@ -7,10 +7,25 @@ import ListingCard from '@/components/ListingCard';
 import MapView from '@/components/MapView';
 import CustomSelect from '@/components/CustomSelect';
 import CreateListingModal from '@/components/modals/CreateListingModal';
-import { SlidersHorizontal, ChevronDown, MapPin, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { LAST_RESULTS_KEY } from '@/components/ListingBreadcrumb';
+import { SlidersHorizontal, ChevronDown, MapPin, ChevronLeft, ChevronRight, Search, X, BellPlus, BellRing } from 'lucide-react';
+import Link from 'next/link';
+import { toast } from 'sonner';
+import { AMENITY_FILTER_LABELS } from '@/lib/data';
+import { saveSearch, deleteSavedSearch } from '@/app/actions/savedSearches';
+
+const PROPERTY_TYPES = { single_room: 'Single Room', shared_room: 'Shared Room', full_mess: 'Full Mess', sublet: 'Sub-let' } as const;
+
+const AMENITY_OPTIONS = Object.entries(AMENITY_FILTER_LABELS).map(([key, label]) => ({ key, label }));
+
+const DEFAULT_BUDGET = '50000';
+
+const listParam = (value: string | null) => new Set((value || '').split(',').filter(Boolean));
 
 export default function ListingsClient({
   initialListings,
+  mapPins,
+  savedSearch,
   zones,
   currentPage,
   totalPages,
@@ -19,6 +34,8 @@ export default function ListingsClient({
   isAdmin,
 }: {
   initialListings: Listing[];
+  mapPins: Listing[];
+  savedSearch: { enabled: boolean; id: number | null };
   zones: Zone[];
   currentPage: number;
   totalPages: number;
@@ -29,47 +46,52 @@ export default function ListingsClient({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [zoneId,      setZoneId]      = useState(searchParams.get('zone')      || '');
-  const [type,        setType]        = useState(searchParams.get('type')       || '');
-  const [budget,      setBudget]      = useState(searchParams.get('budget')     || '50000');
-  const [sort,        setSort]        = useState(searchParams.get('sort')       || 'newest');
-  const [q,           setQ]           = useState(searchParams.get('q')          || '');
+  // Sidebar controls are a draft — they only take effect on "Apply Filters".
+  const [zoneIds,     setZoneIds]     = useState<Set<string>>(() => listParam(searchParams.get('zone')));
+  const [type,        setType]        = useState(searchParams.get('type')   || '');
+  const [budget,      setBudget]      = useState(searchParams.get('budget') || DEFAULT_BUDGET);
+  const [sort,        setSort]        = useState(searchParams.get('sort')   || 'newest');
+  const [q,           setQ]           = useState(searchParams.get('q')      || '');
+  const [amenities,   setAmenities]   = useState<Set<string>>(() => listParam(searchParams.get('amenities')));
+  const [mapFocusZone, setMapFocusZone] = useState<number | undefined>(undefined);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [listModalOpen, setListModalOpen] = useState(false);
+  const [savingSearch, setSavingSearch] = useState(false);
 
-  // Amenities — stored as a Set for easy toggling
-  const initAmenities = (): Set<string> => {
-    const raw = searchParams.get('amenities');
-    return raw ? new Set(raw.split(',').filter(Boolean)) : new Set();
-  };
-  const [amenities, setAmenities] = useState<Set<string>>(initAmenities);
-
-  // Re-sync the controls when the URL changes underneath us (back/forward, or a
-  // link that carries filters) — otherwise the sidebar shows stale values.
+  // Re-sync the controls when the URL changes underneath us (back/forward, a chip
+  // being removed, or a link that carries filters) — otherwise the sidebar shows
+  // stale values.
   useEffect(() => {
-    setZoneId(searchParams.get('zone')   || '');
+    setZoneIds(listParam(searchParams.get('zone')));
     setType(searchParams.get('type')     || '');
-    setBudget(searchParams.get('budget') || '50000');
+    setBudget(searchParams.get('budget') || DEFAULT_BUDGET);
     setSort(searchParams.get('sort')     || 'newest');
     setQ(searchParams.get('q')           || '');
-    const raw = searchParams.get('amenities');
-    setAmenities(raw ? new Set(raw.split(',').filter(Boolean)) : new Set());
+    setAmenities(listParam(searchParams.get('amenities')));
+
+    // Lets the listing breadcrumb return to these exact results.
+    try {
+      const qs = searchParams.toString();
+      if (qs) sessionStorage.setItem(LAST_RESULTS_KEY, `?${qs}`);
+      else sessionStorage.removeItem(LAST_RESULTS_KEY);
+    } catch {
+      // storage unavailable
+    }
   }, [searchParams]);
 
-  const toggleAmenity = (key: string) => {
-    setAmenities(prev => {
+  const toggleIn = (setter: React.Dispatch<React.SetStateAction<Set<string>>>, key: string) =>
+    setter(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
-  };
 
   const buildQuery = (overrides?: { q?: string }) => {
     const p = new URLSearchParams(searchParams.toString());
     const nextQ = overrides?.q !== undefined ? overrides.q : q;
-    if (zoneId)  p.set('zone',   zoneId);   else p.delete('zone');
+    if (zoneIds.size > 0) p.set('zone', [...zoneIds].join(',')); else p.delete('zone');
     if (type)    p.set('type',   type);      else p.delete('type');
-    if (budget && budget !== '50000') p.set('budget', budget); else p.delete('budget');
+    if (budget && budget !== DEFAULT_BUDGET) p.set('budget', budget); else p.delete('budget');
     if (sort && sort !== 'newest')    p.set('sort',   sort);   else p.delete('sort');
     if (nextQ.trim()) p.set('q', nextQ.trim()); else p.delete('q');
     if (amenities.size > 0) p.set('amenities', [...amenities].join(',')); else p.delete('amenities');
@@ -90,7 +112,7 @@ export default function ListingsClient({
   };
 
   const resetFilters = () => {
-    setZoneId(''); setType(''); setBudget('50000'); setSort('newest'); setQ('');
+    setZoneIds(new Set()); setType(''); setBudget(DEFAULT_BUDGET); setSort('newest'); setQ('');
     setAmenities(new Set());
     router.push('/listings');
   };
@@ -100,6 +122,60 @@ export default function ListingsClient({
     p.set('page', newPage.toString());
     router.push(`?${p.toString()}`);
   };
+
+  // ── Active-filter chips ──────────────────────────────────────────
+  // Built from the URL (what's actually applied), not from the sidebar draft.
+  const removeFromUrl = (key: string, value?: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (value !== undefined) {
+      const rest = [...listParam(p.get(key))].filter(v => v !== value);
+      if (rest.length) p.set(key, rest.join(',')); else p.delete(key);
+    } else {
+      p.delete(key);
+    }
+    p.set('page', '1');
+    router.push(`?${p.toString()}`);
+  };
+
+  const chips: { label: string; onRemove: () => void }[] = [];
+  const appliedQ = searchParams.get('q');
+  if (appliedQ) chips.push({ label: `“${appliedQ}”`, onRemove: () => removeFromUrl('q') });
+  for (const id of listParam(searchParams.get('zone'))) {
+    const zone = zones.find(z => z.zone_id.toString() === id);
+    if (zone) chips.push({ label: zone.zone_name, onRemove: () => removeFromUrl('zone', id) });
+  }
+  const appliedType = searchParams.get('type') as keyof typeof PROPERTY_TYPES | null;
+  if (appliedType && PROPERTY_TYPES[appliedType]) {
+    chips.push({ label: PROPERTY_TYPES[appliedType], onRemove: () => removeFromUrl('type') });
+  }
+  const appliedBudget = searchParams.get('budget');
+  if (appliedBudget && appliedBudget !== DEFAULT_BUDGET) {
+    chips.push({ label: `Up to ৳${parseInt(appliedBudget).toLocaleString()}`, onRemove: () => removeFromUrl('budget') });
+  }
+  for (const key of listParam(searchParams.get('amenities'))) {
+    const opt = AMENITY_OPTIONS.find(a => a.key === key);
+    if (opt) chips.push({ label: opt.label, onRemove: () => removeFromUrl('amenities', key) });
+  }
+
+  const toggleSavedSearch = async () => {
+    setSavingSearch(true);
+    const res = savedSearch.id
+      ? await deleteSavedSearch(savedSearch.id)
+      : await saveSearch(searchParams.toString());
+    setSavingSearch(false);
+    if (res.error) { toast.error(res.error); return; }
+    toast.success(savedSearch.id
+      ? 'Saved search removed.'
+      : "Search saved — you'll be notified when a new listing matches.");
+    router.refresh();
+  };
+
+  const focusZoneOnMap = (zoneId: number) => {
+    setMapFocusZone(zoneId);
+    document.getElementById('map')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  const appliedZoneIds = [...listParam(searchParams.get('zone'))];
 
   return (
     <div className="container">
@@ -122,7 +198,7 @@ export default function ListingsClient({
         </button>
 
         <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
-          <h4>Zone</h4>
+          <h4>Zones</h4>
           <div id="zoneFilters">
             {zones.map(z => (
               <div key={z.zone_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -131,16 +207,17 @@ export default function ListingsClient({
                     type="checkbox"
                     className="zone"
                     value={z.zone_id}
-                    checked={zoneId === z.zone_id.toString()}
-                    onChange={() => setZoneId(zoneId === z.zone_id.toString() ? '' : z.zone_id.toString())}
+                    checked={zoneIds.has(z.zone_id.toString())}
+                    onChange={() => toggleIn(setZoneIds, z.zone_id.toString())}
                   /> {z.zone_name}
                 </label>
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
                   style={{ padding: '2px 6px', border: 'none' }}
-                  onClick={() => setZoneId(z.zone_id.toString())}
-                  title="Show on Map"
+                  onClick={() => focusZoneOnMap(z.zone_id)}
+                  title={`Show ${z.zone_name} on the map`}
+                  aria-label={`Show ${z.zone_name} on the map`}
                 >
                   <MapPin style={{ width: '14px', height: '14px', color: 'var(--primary)' }} />
                 </button>
@@ -149,10 +226,10 @@ export default function ListingsClient({
           </div>
 
           <h4>Property Type</h4>
-          {(['single_room', 'shared_room', 'full_mess', 'sublet'] as const).map(val => (
+          {(Object.keys(PROPERTY_TYPES) as (keyof typeof PROPERTY_TYPES)[]).map(val => (
             <label key={val}>
               <input type="checkbox" value={val} checked={type === val} onChange={() => setType(type === val ? '' : val)} />{' '}
-              {{ single_room: 'Single Room', shared_room: 'Shared Room', full_mess: 'Full Mess', sublet: 'Sub-let' }[val]}
+              {PROPERTY_TYPES[val]}
             </label>
           ))}
 
@@ -160,20 +237,12 @@ export default function ListingsClient({
           <input type="range" min="1000" max="50000" step="500" value={budget} onChange={e => setBudget(e.target.value)} />
 
           <h4>Amenities</h4>
-          {[
-            { key: 'attached_bathroom', label: 'Attached Bathroom' },
-            { key: 'attached_kitchen',  label: 'Kitchen' },
-            { key: 'is_furnished',      label: 'Furnished' },
-            { key: 'rooftop_access',    label: 'Rooftop' },
-            { key: 'parking',           label: 'Parking' },
-            { key: 'power_backup',      label: 'Power Backup' },
-            { key: 'lift_access',       label: 'Lift' },
-          ].map(({ key, label }) => (
+          {AMENITY_OPTIONS.map(({ key, label }) => (
             <label key={key}>
               <input
                 type="checkbox"
                 checked={amenities.has(key)}
-                onChange={() => toggleAmenity(key)}
+                onChange={() => toggleIn(setAmenities, key)}
               /> {label}
             </label>
           ))}
@@ -222,15 +291,48 @@ export default function ListingsClient({
             <button type="submit" className="btn btn-primary">Search</button>
           </form>
 
-          <div style={{ marginBottom: '12px', color: 'var(--gray)', fontSize: '14px' }}>
-            {totalCount} listing{totalCount !== 1 ? 's' : ''} found
-            {totalPages > 1 && ` — page ${currentPage} of ${totalPages}`}
+          <div style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ color: 'var(--gray)', fontSize: '14px' }}>
+              {totalCount} listing{totalCount !== 1 ? 's' : ''} found
+              {totalPages > 1 && ` — page ${currentPage} of ${totalPages}`}
+            </span>
+            {savedSearch.enabled && chips.length > 0 && !isAdmin && (
+              isLoggedIn ? (
+                <button
+                  type="button"
+                  className={`btn btn-sm ${savedSearch.id ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={toggleSavedSearch}
+                  disabled={savingSearch}
+                  title={savedSearch.id ? 'Stop alerts for this search' : 'Get notified when a new listing matches'}
+                >
+                  {savedSearch.id ? <BellRing size={15} /> : <BellPlus size={15} />}
+                  {savedSearch.id ? 'Alerts on' : 'Save search'}
+                </button>
+              ) : (
+                <Link href="/login" className="btn btn-outline btn-sm"><BellPlus size={15} /> Save search</Link>
+              )
+            )}
           </div>
+
+          {chips.length > 0 && (
+            <div className="filter-chips" aria-label="Active filters">
+              {chips.map(chip => (
+                <button key={chip.label} type="button" className="filter-chip" onClick={chip.onRemove} aria-label={`Remove filter: ${chip.label}`}>
+                  {chip.label}
+                  <X size={13} />
+                </button>
+              ))}
+              {chips.length > 1 && (
+                <button type="button" className="filter-chip-clear" onClick={resetFilters}>Clear all</button>
+              )}
+            </div>
+          )}
 
           <div className="grid-2" id="listingsGrid">
             {initialListings.length === 0 ? (
               <p style={{ color: 'var(--gray)', gridColumn: '1/-1', textAlign: 'center', padding: '40px 0' }}>
                 No listings match your filters.
+                {chips.length > 0 && <> <button type="button" className="link-button" onClick={resetFilters}>Clear filters</button></>}
               </p>
             ) : (
               initialListings.map(l => <ListingCard key={l.listing_id || l.id} listing={l} />)
@@ -250,13 +352,13 @@ export default function ListingsClient({
             </div>
           )}
 
-          {/* Map — passes listings so individual pins are shown */}
+          {/* Map — every matching listing is pinned, not just this page */}
           <div id="map" style={{ marginTop: '40px' }}>
             <MapView
               zones={zones}
-              listings={initialListings}
-              selectedZoneId={zoneId ? parseInt(zoneId) : undefined}
-              onZoneSelect={id => setZoneId(id.toString())}
+              listings={mapPins}
+              selectedZoneId={mapFocusZone ?? (appliedZoneIds.length === 1 ? parseInt(appliedZoneIds[0]) : undefined)}
+              onZoneSelect={id => toggleIn(setZoneIds, id.toString())}
             />
           </div>
         </main>

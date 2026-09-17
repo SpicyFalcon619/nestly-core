@@ -45,6 +45,16 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
 
    The service role key is used server-side only, for admin actions — never expose it to the client or commit it.
 
+   Optional — email notifications (applications, offers, verification, saved-search matches). Without these, notifications stay in-app only:
+
+   ```
+   RESEND_API_KEY=your-resend-api-key
+   EMAIL_FROM=Nestly <notifications@your-verified-domain.com>
+   NEXT_PUBLIC_SITE_URL=https://your-deployed-site.com
+   ```
+
+   `NEXT_PUBLIC_SITE_URL` makes the "Open in Nestly" link in emails absolute; on Vercel the production URL is picked up automatically.
+
 3. Apply the SQL migrations in `supabase/migrations/` to your Supabase project, in order (via the SQL Editor or the Supabase CLI).
 
 4. Start the dev server:
@@ -54,6 +64,13 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
    ```
 
    Open [http://localhost:3000](http://localhost:3000).
+
+5. Optionally, fill the app with demo listings (development only — writes with the service role key):
+
+   ```bash
+   node scripts/seed-demo.mjs          # add demo listings
+   node scripts/seed-demo.mjs --clean  # remove them again
+   ```
 
 ## Project structure
 

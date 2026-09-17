@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { MapPin, ShieldCheck, Bath, UtensilsCrossed, Sofa, Sunset, Car, Zap, ArrowUpDown, CheckCircle2, XCircle, Users, DoorOpen, CalendarDays, Home, Phone, Mail, Lock } from 'lucide-react';
+import { MapPin, ShieldCheck, Bath, UtensilsCrossed, Sofa, Sunset, Car, Zap, ArrowUpDown, CheckCircle2, XCircle, Users, DoorOpen, CalendarDays, Home, Phone, Mail, Lock, TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { fmt, fmtDate, propertyTypeLabel, statusLabel, statusColor, placeholderPhoto, avatarInitials } from '@/lib/utils';
 import ApplicationForm from './ApplicationForm';
 import WatchlistButton from '@/components/WatchlistButton';
@@ -14,6 +14,9 @@ import CommentSection from '@/components/comments/CommentSection';
 import UserRating from '@/components/ratings/UserRating';
 import Link from 'next/link';
 import MessageButton from '@/components/MessageButton';
+import ShareButton from '@/components/ShareButton';
+import ListingBreadcrumb from '@/components/ListingBreadcrumb';
+import ListingCard from '@/components/ListingCard';
 import type { Metadata } from 'next';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -148,12 +151,69 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
     }
   }
 
+  // Comparable listings — same zone or same property type. One query feeds both
+  // the price comparison and the "similar listings" row.
+  const { data: compRows } = await supabase
+    .from('listings')
+    .select('*, zone:zones(zone_name), costs:utility_costs(*), amenities:listing_amenities(*)')
+    .neq('listing_id', parseInt(id))
+    .neq('status', 'occupied')
+    .or(`zone_id.eq.${listing.zone_id},property_type.eq.${listing.property_type}`)
+    .order('created_at', { ascending: false })
+    .limit(40);
+
+  const comps: any[] = (compRows || []).map((l: any) => ({ ...l, zone: l.zone?.zone_name ?? undefined }));
+  const thisTotal = Number(listing.costs?.total_monthly || 0);
+  const totalOf = (l: any) => Number(l.costs?.total_monthly || 0);
+
+  // Price comparison is like-for-like (same property type) — comparing a single
+  // room against a six-room mess would be meaningless. Prefer the same zone; fall
+  // back to the whole city; show nothing without at least two comparables.
+  const MIN_SAMPLE = 2;
+  const sameType = comps.filter(l => l.property_type === listing.property_type && totalOf(l) > 0);
+  const sameTypeZone = sameType.filter(l => l.zone_id === listing.zone_id);
+  const sample = sameTypeZone.length >= MIN_SAMPLE
+    ? { rows: sameTypeZone, scope: zoneName || 'this zone' }
+    : sameType.length >= MIN_SAMPLE
+      ? { rows: sameType, scope: 'Dhaka' }
+      : null;
+
+  let priceComparison: { text: string; tone: 'below' | 'above' | 'even'; basis: string } | null = null;
+  if (sample && thisTotal > 0) {
+    const avg = sample.rows.reduce((s, l) => s + totalOf(l), 0) / sample.rows.length;
+    const diff = thisTotal - avg;
+    const typeLabel = propertyTypeLabel(listing.property_type).toLowerCase();
+    const basis = `Based on ${sample.rows.length} other ${typeLabel} listing${sample.rows.length === 1 ? '' : 's'}`;
+    if (Math.abs(diff) / avg < 0.03) {
+      priceComparison = { text: `About average for a ${typeLabel} in ${sample.scope}`, tone: 'even', basis };
+    } else {
+      const amount = fmt(Math.round(Math.abs(diff) / 50) * 50);
+      priceComparison = diff < 0
+        ? { text: `${amount} below the average ${typeLabel} in ${sample.scope}`, tone: 'below', basis }
+        : { text: `${amount} above the average ${typeLabel} in ${sample.scope}`, tone: 'above', basis };
+    }
+  }
+
+  // Similar listings: rank by shared zone, shared type, and a comparable price.
+  const similar = comps
+    .map(l => ({
+      l,
+      score:
+        (l.zone_id === listing.zone_id ? 2 : 0) +
+        (l.property_type === listing.property_type ? 2 : 0) +
+        (thisTotal > 0 && totalOf(l) > 0 && Math.abs(totalOf(l) - thisTotal) / thisTotal <= 0.25 ? 1 : 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(x => x.l);
+
   return (
     <div className="container" style={{ padding: '40px 5%' }}>
       <div className="detail-layout">
 
         {/* Left Column: Details */}
         <div style={{ minWidth: 0 }}>
+          <ListingBreadcrumb zoneId={listing.zone_id} zoneName={zoneName} title={listing.title} />
           <div style={{ marginBottom: '24px' }}>
             <div className="badges" style={{ marginBottom: '12px' }}>
               {zoneName && <span className="badge badge-navy"><MapPin size={14}/> {zoneName}</span>}
@@ -166,7 +226,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 <h1 style={{ fontSize: '32px', marginBottom: '8px' }}>{listing.title}</h1>
                 <p style={{ color: 'var(--ink-muted)' }}>{listing.address}</p>
               </div>
-              <WatchlistButton listingId={parseInt(id)} initialIsWatched={isWatched} />
+              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <ShareButton title={listing.title} />
+                <WatchlistButton listingId={parseInt(id)} initialIsWatched={isWatched} />
+              </div>
             </div>
           </div>
 
@@ -327,6 +390,20 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 <span>Total Monthly</span>
                 <span>{fmt(listing.costs?.total_monthly || 0)}</span>
               </div>
+
+              {priceComparison && (
+                <div className={`price-compare price-compare-${priceComparison.tone}`}>
+                  {priceComparison.tone === 'below'
+                    ? <TrendingDown size={15} />
+                    : priceComparison.tone === 'above'
+                      ? <TrendingUp size={15} />
+                      : <Minus size={15} />}
+                  <div>
+                    <div className="price-compare-text">{priceComparison.text}</div>
+                    <div className="price-compare-basis">{priceComparison.basis}</div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* White card — owner info + apply */}
@@ -465,6 +542,18 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         </div>
 
       </div>
+
+      {similar.length > 0 && (
+        <section className="section" style={{ borderBottom: 'none', marginTop: '24px' }}>
+          <div className="section-head">
+            <h2>Similar listings</h2>
+            <Link href={`/listings?zone=${listing.zone_id}`}>More in {zoneName || 'this zone'} →</Link>
+          </div>
+          <div className="grid-3">
+            {similar.map(l => <ListingCard key={l.listing_id} listing={l} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

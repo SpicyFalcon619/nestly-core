@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Send, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { submitApplication } from '@/app/actions/applications';
+import { submitApplication, withdrawApplication } from '@/app/actions/applications';
 
 interface ApplicationFormProps {
   listingId: number;
@@ -39,26 +39,53 @@ const statusConfig: Record<string, { icon: React.ReactNode; label: string; sub: 
 export default function ApplicationForm({ listingId, ownerId, listingTitle, existingStatus }: ApplicationFormProps) {
   const [status, setStatus] = useState<string | null>(existingStatus);
   const [applying, setApplying] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [message, setMessage] = useState('');
+
+  const handleWithdraw = async () => {
+    if (!window.confirm('Withdraw your application? The landlord will be notified, and you can apply again later.')) return;
+    setWithdrawing(true);
+    const res = await withdrawApplication(listingId);
+    setWithdrawing(false);
+    if (res.error) {
+      toast.error(res.error);
+    } else {
+      toast.success('Application withdrawn.');
+      setStatus(null);
+    }
+  };
 
   // Show status card for pending or accepted — not for rejected (allow re-apply)
   if (status && status !== 'rejected') {
     const cfg = statusConfig[status];
     return (
-      <div style={{
-        padding: '16px',
-        borderRadius: '10px',
-        background: cfg.bg,
-        border: `1.5px solid color-mix(in srgb, ${cfg.color} 30%, transparent)`,
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '12px',
-      }}>
-        <span style={{ color: cfg.color, flexShrink: 0, marginTop: 2 }}>{cfg.icon}</span>
-        <div>
-          <div style={{ fontWeight: 700, color: cfg.color, marginBottom: 4 }}>{cfg.label}</div>
-          <div style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: 1.5 }}>{cfg.sub}</div>
+      <div>
+        <div style={{
+          padding: '16px',
+          borderRadius: '10px',
+          background: cfg.bg,
+          border: `1.5px solid color-mix(in srgb, ${cfg.color} 30%, transparent)`,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+        }}>
+          <span style={{ color: cfg.color, flexShrink: 0, marginTop: 2 }}>{cfg.icon}</span>
+          <div>
+            <div style={{ fontWeight: 700, color: cfg.color, marginBottom: 4 }}>{cfg.label}</div>
+            <div style={{ fontSize: '13px', color: 'var(--ink-muted)', lineHeight: 1.5 }}>{cfg.sub}</div>
+          </div>
         </div>
+        {status === 'pending' && (
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={handleWithdraw}
+            disabled={withdrawing}
+            style={{ width: '100%', marginTop: '10px' }}
+          >
+            {withdrawing ? 'Withdrawing…' : 'Withdraw application'}
+          </button>
+        )}
       </div>
     );
   }

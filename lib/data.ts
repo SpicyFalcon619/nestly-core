@@ -63,6 +63,17 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   any: 'Any',
 };
 
+// Labels used by the /listings amenity filter, its chips, and saved-search names.
+export const AMENITY_FILTER_LABELS: Record<string, string> = {
+  attached_bathroom: 'Attached Bathroom',
+  attached_kitchen: 'Kitchen',
+  is_furnished: 'Furnished',
+  rooftop_access: 'Rooftop',
+  parking: 'Parking',
+  power_backup: 'Power Backup',
+  lift_access: 'Lift',
+};
+
 export const ITEM_CATEGORY_LABELS: Record<string, string> = {
   furniture: 'Furniture',
   appliances: 'Appliances',

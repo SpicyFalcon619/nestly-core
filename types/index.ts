@@ -320,7 +320,16 @@ export interface Complaint {
   listingTitle?: string;
 }
 
+export interface SavedSearch {
+  id: number;
+  query: string;
+  label: string;
+  created_at: string;
+}
+
 export interface DashboardData {
+  savedSearchesEnabled?: boolean;
+  savedSearches?: SavedSearch[];
   myListings: Listing[];
   myItems: Item[];
   watched: Listing[];
