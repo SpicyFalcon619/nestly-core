@@ -9,6 +9,8 @@ import { fmt } from '@/lib/utils';
 import { ShoppingBag, Search, Filter } from 'lucide-react';
 import CustomSelect from '@/components/CustomSelect';
 
+const PRICE_CEILING = 60000;
+
 export default function ExchangeContent({
   items,
   zones,
@@ -23,7 +25,10 @@ export default function ExchangeContent({
   const [filterCat, setFilterCat] = useState('all');
   const [filterCond, setFilterCond] = useState('all');
   const [filterZone, setFilterZone] = useState('all');
-  const [maxPrice, setMaxPrice] = useState(20000);
+  // Top of the slider means "no limit". The old ceiling was 20,000, which made
+  // laptops, fridges and ACs — exactly what students sell — unreachable at any
+  // slider position, not merely hidden by default.
+  const [maxPrice, setMaxPrice] = useState(PRICE_CEILING);
   const [sort, setSort] = useState('newest');
   const [sellModalOpen, setSellModalOpen] = useState(false);
   const router = useRouter();
@@ -34,7 +39,7 @@ export default function ExchangeContent({
       if (filterCat !== 'all' && it.category !== filterCat) return false;
       if (filterCond !== 'all' && it.item_condition !== filterCond) return false;
       if (filterZone !== 'all' && it.zone !== filterZone) return false;
-      if (it.asking_price > maxPrice) return false;
+      if (maxPrice < PRICE_CEILING && it.asking_price > maxPrice) return false;
       return true;
     });
 
@@ -101,12 +106,12 @@ export default function ExchangeContent({
           />
         </div>
         <div className="form-group" style={{ margin: 0, minWidth: '200px' }}>
-          <label>Max price: <span id="priceVal">{fmt(maxPrice)}</span></label>
+          <label>Max price: <span id="priceVal">{maxPrice >= PRICE_CEILING ? 'Any' : fmt(maxPrice)}</span></label>
           <input
             type="range"
             min="0"
-            max="20000"
-            step="500"
+            max={PRICE_CEILING}
+            step="1000"
             value={maxPrice}
             onChange={e => setMaxPrice(parseInt(e.target.value))}
           />

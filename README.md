@@ -65,10 +65,10 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
 
    Open [http://localhost:3000](http://localhost:3000).
 
-5. Optionally, fill the app with demo listings (development only — writes with the service role key):
+5. Optionally, fill the app with demo listings and marketplace items (development only — writes with the service role key):
 
    ```bash
-   node scripts/seed-demo.mjs          # add demo listings
+   node scripts/seed-demo.mjs          # add demo listings + exchange items
    node scripts/seed-demo.mjs --clean  # remove them again
    ```
 

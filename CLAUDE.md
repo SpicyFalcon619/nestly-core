@@ -428,12 +428,61 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
   room near Notun Bazar bus stand" was also re-pointed to the Student Test
   profile, matching what `peer_listing` means.
 
-**Migrations not yet applied (checked 2026-09-17):** 0004 (zone rename),
-0005 (total_monthly trigger), 0006 (saved searches).
+## Comment threads, mentions, vote counts (2026-09-18, later)
+
+- **Vote counts never persisted.** `voteComment` recomputed the totals and
+  wrote them to `listing_comments.upvotes/downvotes` — but the RLS policy on
+  those hand-made tables only lets the AUTHOR update their row, so a voter's
+  UPDATE matched zero rows and returned **no error**. The vote row itself stuck,
+  so after a reload the arrow was still lit while the count read 0. Counts are
+  now derived from the votes table on read (`fetchCommentsWithAuthors`, which
+  also repairs rows that were already wrong) and written with the service role
+  in `voteComment`, which returns the true totals so the optimistic UI can't
+  drift either. **A zero-row write is the default failure mode on these
+  tables — check the returned rows, never just `error`.**
+- **Threaded replies + @mentions** need **migration 0007**, which also finally
+  captures the four comment tables in a migration (reproducing the LIVE shape —
+  bigint ids, no FK to profiles — rather than an idealised one, so fresh and
+  running projects match). Until it's applied `commentThreadsAvailable` returns
+  false and comments render flat, exactly as before; nothing breaks.
+- Threads are **two levels, deliberately**: replying to a reply attaches to the
+  same root and prefills an @mention instead, so threads can't march off the
+  right edge. `parent_id` cascades, so deleting a parent takes its replies —
+  the confirm dialog says how many.
+- Mentions are stored **alongside** the text (`mentions` JSONB of
+  `{id, name, slug}`), not parsed out of it: the body keeps "@Name" as plain
+  text and the array is what links and notifies. The server re-resolves every
+  id against `profiles` and rebuilds the array — the client's copy is never
+  trusted — and a private profile stores `slug: null` so it renders unlinked.
+  The autocomplete only offers people **already in the thread plus the owner**;
+  it is not a search over all users, which would make the comment box a
+  directory.
+- New notification types `comment_reply` and `comment_mention`. One per
+  person per comment — a reply that also mentions you on your own listing
+  arrives once, not three times. Neither emails (`EMAIL_SUBJECTS` gates that).
+- **Deleting a comment now clears its "X commented on your listing"
+  notification**, but only when it was that author's last comment there — a
+  notification pointing at a comment that no longer exists is how this was
+  reported.
+- **Exchange price slider capped at ৳20,000**, and the filter ran at any
+  position, so an AC or a laptop could not be shown *at all*. Ceiling is now
+  60,000 and the top of the range means "Any" (same pattern as the listings
+  budget), which is also the new default.
+- `scripts/seed-demo.mjs` also seeds **7 marketplace items** (`--clean`
+  removes them), owned by a student — the Exchange had two hand-made rows and
+  nothing to look at.
+- Demo account for click-testing: **student@test.com / 1234Student**
+  ("Student Test 2", has preferences, so compatibility renders against the
+  peer listing owned by Student Test).
+
+**Migrations not yet applied (checked 2026-09-18):** 0004 (zone rename),
+0005 (total_monthly trigger), 0006 (saved searches), 0007 (comment threads +
+mentions).
 
 **Still open:**
 - `expected_vacate_date` is displayed but no form collects it.
-- The comment tables exist in the live DB but in no migration.
+- ~~The comment tables exist in the live DB but in no migration.~~ Captured
+  in 0007 (not yet applied).
 - Admin/verification screens and the remaining logged-in flows (photo
   editor, contact reveal, withdrawal, saved-search UI) are still verified
   by typecheck and query-shape checks only. The Playwright + throwaway
