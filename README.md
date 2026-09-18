@@ -72,6 +72,21 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
    node scripts/seed-demo.mjs --clean  # remove them again
    ```
 
+   The same script creates one demo account per role, so every screen can be
+   seen without using a real account:
+
+   | Role | Email | Password |
+   | --- | --- | --- |
+   | Student | student@test.com | 1234Student |
+   | Student | student2@test.com | 1234Student |
+   | Landlord | landlord@test.com | 1234Landlord |
+   | Admin | admin@test.com | 1234Admin |
+
+   Demo listings and marketplace items belong to these accounts, and `--clean`
+   removes that content while keeping the accounts. There are two students on
+   purpose: compatibility never scores your own listing, so with a single
+   student the student-posted rooms would show no score.
+
 ## Project structure
 
 ```

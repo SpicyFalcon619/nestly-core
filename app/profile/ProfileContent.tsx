@@ -351,14 +351,18 @@ export default function ProfileContent({
         </div>
       </div>
 
-      {/* Right Column: Roommate Preferences (Students Only) */}
-      {profile.role === 'student' && (
+      {/* Right Column: lifestyle preferences.
+          Landlords get this too — they set the house rules, and without a row
+          for them no listing they post can ever show a compatibility score. */}
+      {(profile.role === 'student' || profile.role === 'landlord') && (
         <div className="card" style={{ padding: '32px' }}>
           <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 0, color: 'var(--navy)' }}>
-            <Settings size={24} /> Roommate Preferences
+            <Settings size={24} /> {profile.role === 'landlord' ? 'House Rules' : 'Roommate Preferences'}
           </h2>
           <p style={{ color: 'var(--gray)', fontSize: '14px', marginBottom: '24px' }}>
-            Fill this out to get a Compatibility Score with other students and listings!
+            {profile.role === 'landlord'
+              ? 'The rules of your property. Renters see how their own habits compare before they apply.'
+              : 'Fill this out to get a compatibility score against other students and their listings.'}
           </p>
 
           <form onSubmit={handlePrefsSubmit}>
@@ -422,7 +426,7 @@ export default function ProfileContent({
 
             <div className="grid-2">
               <div className="form-group">
-                <label>Flatmate Gender Pref.</label>
+                <label>{profile.role === 'landlord' ? 'Tenant Gender Pref.' : 'Flatmate Gender Pref.'}</label>
                 <CustomSelect
                   value={prefsForm.preferred_gender}
                   onChange={(v) => setPrefsForm({...prefsForm, preferred_gender: v as any})}
@@ -435,7 +439,7 @@ export default function ProfileContent({
                 />
               </div>
               <div className="form-group">
-                <label>Daily Study Hours (Avg)</label>
+                <label>{profile.role === 'landlord' ? 'Study Hours Expected (Avg)' : 'Daily Study Hours (Avg)'}</label>
                 <input
                   type="number"
                   value={prefsForm.study_hours}

@@ -436,6 +436,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 result={compat}
                 otherName={owner.name}
                 needsMyPreferences={compatNeedsMine}
+                variant={owner.role === 'landlord' ? 'house' : 'flatmate'}
               />
             )}
 

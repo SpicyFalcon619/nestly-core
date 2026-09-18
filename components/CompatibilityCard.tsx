@@ -8,6 +8,11 @@ interface Props {
   otherName?: string;
   /** True when the viewer hasn't filled in their own preferences yet. */
   needsMyPreferences?: boolean;
+  /**
+   * A landlord's answers are the house rules, not a future flatmate's habits —
+   * same eight dimensions, different thing to call it.
+   */
+  variant?: 'flatmate' | 'house';
 }
 
 /**
@@ -15,13 +20,17 @@ interface Props {
  * sides have preferences — or, with `needsMyPreferences`, as the prompt that
  * gets the viewer there.
  */
-export default function CompatibilityCard({ result, otherName, needsMyPreferences }: Props) {
+export default function CompatibilityCard({ result, otherName, needsMyPreferences, variant = 'flatmate' }: Props) {
+  const heading = variant === 'house' ? 'Lifestyle fit' : 'Flatmate compatibility';
+
   if (needsMyPreferences) {
     return (
       <div className="card" style={{ padding: '24px' }}>
-        <h4 className="compat-heading"><Users size={16} /> Flatmate compatibility</h4>
+        <h4 className="compat-heading"><Users size={16} /> {heading}</h4>
         <p style={{ fontSize: '13.5px', color: 'var(--ink-mid)', lineHeight: 1.6, margin: '0 0 14px' }}>
-          {otherName ? `${otherName} has shared their lifestyle preferences.` : 'This lister has shared their lifestyle preferences.'}
+          {variant === 'house'
+            ? `${otherName ?? 'This landlord'} has set house rules for the property.`
+            : `${otherName ?? 'This lister'} has shared their lifestyle preferences.`}
           {' '}Fill in yours to see how well you match on sleep, cleanliness, noise, guests and four more.
         </p>
         <Link href="/profile" className="btn btn-outline btn-sm">Set my preferences</Link>
@@ -34,7 +43,7 @@ export default function CompatibilityCard({ result, otherName, needsMyPreference
 
   return (
     <div className="card" style={{ padding: '24px' }}>
-      <h4 className="compat-heading"><Users size={16} /> Flatmate compatibility</h4>
+      <h4 className="compat-heading"><Users size={16} /> {heading}</h4>
 
       <div className="compat-head">
         <div
@@ -46,7 +55,9 @@ export default function CompatibilityCard({ result, otherName, needsMyPreference
         <div>
           <div className="compat-band">{band.label}</div>
           <div className="compat-caption">
-            Your preferences against {otherName ? `${otherName}'s` : 'the lister\u2019s'}, across eight dimensions.
+            {variant === 'house'
+              ? `Your preferences against the house rules${otherName ? ` ${otherName} set` : ''}, across eight dimensions.`
+              : `Your preferences against ${otherName ? `${otherName}'s` : 'the lister\u2019s'}, across eight dimensions.`}
           </div>
         </div>
       </div>
@@ -68,7 +79,7 @@ export default function CompatibilityCard({ result, otherName, needsMyPreference
         ))}
       </div>
 
-      <p className="compat-foot">Left value is yours, right is theirs.</p>
+      <p className="compat-foot">Left value is yours, right is {variant === 'house' ? 'the house rule' : 'theirs'}.</p>
     </div>
   );
 }

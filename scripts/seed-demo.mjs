@@ -301,10 +301,15 @@ async function seed() {
   // peer listing belongs to someone else — flatmate compatibility never scores
   // your own listing, so a single student owner makes it look broken.
   const peerOwners = [accounts.student, accounts.student2].filter(Boolean);
-  let peerTurn = 0;
+  // Keyed by title, not a running counter: the insert loop skips rows that
+  // already exist, so a counter would hand the same listing to a different
+  // student on a second run than it did on the first.
+  const peerOrder = new Map(
+    LISTINGS.filter(l => l.listing_type === 'peer_listing').map((l, i) => [l.title, i])
+  );
   const ownerFor = (listing) =>
-    listing.listing_type === 'peer_listing' && peerOwners.length
-      ? peerOwners[peerTurn++ % peerOwners.length]
+    peerOwners.length && peerOrder.has(listing.title)
+      ? peerOwners[peerOrder.get(listing.title) % peerOwners.length]
       : landlord;
 
   const { data: zones } = await db.from('zones').select('zone_id, zone_name');
@@ -340,13 +345,13 @@ async function seed() {
 
     console.log(`insert #${inserted.listing_id}  ${l.title.slice(0, 50)}…  (৳${total.toLocaleString('en-BD')}/mo)`);
   }
-  console.log(`\nOwners: ${landlord.name} (landlord listings), ${peerOwner.name} (peer listings).`);
+  console.log(`\nOwners: ${landlord.name} (landlord listings), ${peerOwners.map(o => o.name).join(' / ')} (peer listings).`);
   // Rows from an earlier run still belong to whoever owned them then.
-  peerTurn = 0;
   for (const l of LISTINGS) await reownDemoRows(db, 'listings', 'user_id', [l.title], ownerFor(l).id);
 
-  await seedItems(accounts.student2 || accounts.student, zoneId);
-  await reownDemoRows(db, 'items', 'seller_id', ITEM_TITLES, (accounts.student2 || accounts.student).id);
+  const itemSeller = accounts.student2 || accounts.student;
+  await seedItems(itemSeller, zoneId);
+  await reownDemoRows(db, 'items', 'seller_id', ITEM_TITLES, itemSeller.id);
   console.log('Remove with: node scripts/seed-demo.mjs --clean');
 }
 

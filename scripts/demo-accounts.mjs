@@ -53,6 +53,13 @@ export const DEMO_ACCOUNTS = [
     gender: 'male',
     phone: '+8801711000103',
     bio: 'Demo landlord account. Rents out rooms in Aftabnagar and Shatarkul.',
+    // House rules, in the same eight dimensions. A landlord with no row here
+    // means none of their listings can ever show a compatibility score.
+    prefs: {
+      sleep_schedule: 'flexible', study_hours: 3, diet: 'non_veg',
+      guest_policy: 'restricted', smoking_tolerance: false,
+      preferred_gender: 'any', cleanliness_score: 4, noise_tolerance: 'quiet',
+    },
   },
   {
     key: 'admin',

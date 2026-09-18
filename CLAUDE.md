@@ -471,9 +471,20 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
 - `scripts/seed-demo.mjs` also seeds **7 marketplace items** (`--clean`
   removes them), owned by a student — the Exchange had two hand-made rows and
   nothing to look at.
-- Demo account for click-testing: **student@test.com / 1234Student**
-  ("Student Test 2", has preferences, so compatibility renders against the
-  peer listing owned by Student Test).
+- **Demo accounts, one per role** (`scripts/demo-accounts.mjs`, created by
+  `seed-demo.mjs`): student@test.com / student2@test.com (1234Student),
+  landlord@test.com (1234Landlord), admin@test.com (1234Admin). Every demo
+  listing and exchange item is re-pointed at them on each run
+  (`reownDemoRows`), so demo content never sits under a real account.
+  **Two** students on purpose: compatibility never scores your own listing, so
+  with one student the peer listings show nothing. Peer listings are assigned
+  by title, not a counter — the insert loop skips existing rows, so a counter
+  would hand the same listing to a different student on the second run.
+- **Landlords can now set preferences too**, shown as "House Rules" on the
+  profile. Without a row for the landlord, a landlord-posted listing could
+  never show a score — which is most of the listings. `CompatibilityCard`
+  takes `variant="house"` for those: "Lifestyle fit", and the right-hand
+  value reads as the house rule rather than a flatmate's habit.
 
 **Migrations not yet applied (checked 2026-09-18):** 0004 (zone rename),
 0005 (total_monthly trigger), 0006 (saved searches), 0007 (comment threads +
