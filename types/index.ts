@@ -116,6 +116,8 @@ export interface Listing {
   ownerName?: string;
   ownerEmail?: string;
   ownerId?: string;
+  /** 0-100 flatmate match with the viewer; absent when either side has no preferences. */
+  compatibility?: number;
   costs?: UtilityCosts | null;
   amenities?: ListingAmenities | null;
   reviews?: Review[];

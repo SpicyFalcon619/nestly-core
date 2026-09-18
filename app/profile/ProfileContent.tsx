@@ -153,12 +153,13 @@ export default function ProfileContent({
               name={profile.name}
               currentUrl={profile.profile_pic}
               onUpload={(url) => setProfile({ ...profile, profile_pic: url })}
+              onRemove={() => setProfile({ ...profile, profile_pic: undefined })}
               size={96}
             />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 600, marginBottom: '4px' }}>{profile.name}</div>
               <div style={{ fontSize: '13px', color: 'var(--ink-muted)', marginBottom: '12px' }}>
-                Click the avatar to upload a new photo (max 2 MB).
+                Click the avatar to upload a new photo (max 2 MB). Use the × to remove it and fall back to your initials.
               </div>
               {profile.profile_slug && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

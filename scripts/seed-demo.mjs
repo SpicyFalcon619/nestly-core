@@ -184,6 +184,14 @@ async function seed() {
     process.exit(1);
   }
 
+  // A peer listing is a student offering a spare room, so its owner must be a
+  // student — that's also the only case where flatmate compatibility can be
+  // scored, so prefer a student who has filled in their preferences.
+  const { data: students } = await db.from('profiles').select('id, name').eq('role', 'student');
+  const { data: prefRows } = await db.from('user_preferences').select('user_id');
+  const withPrefs = new Set((prefRows || []).map(r => r.user_id));
+  const peerOwner = students?.find(s => withPrefs.has(s.id)) || students?.[0] || landlord;
+
   const { data: zones } = await db.from('zones').select('zone_id, zone_name');
   const zoneId = (name) => zones?.find(z => z.zone_name === name)?.zone_id ?? zones?.[0]?.zone_id;
 
@@ -198,7 +206,7 @@ async function seed() {
     const { zone, costs, amenities, ...listing } = l;
     const { data: inserted, error } = await db.from('listings').insert({
       ...listing,
-      user_id: landlord.id,
+      user_id: l.listing_type === 'peer_listing' ? peerOwner.id : landlord.id,
       zone_id: zoneId(zone),
     }).select('listing_id').single();
 
@@ -217,7 +225,8 @@ async function seed() {
 
     console.log(`insert #${inserted.listing_id}  ${l.title.slice(0, 50)}…  (৳${total.toLocaleString('en-BD')}/mo)`);
   }
-  console.log(`\nOwner: ${landlord.name}. Remove with: node scripts/seed-demo.mjs --clean`);
+  console.log(`\nOwners: ${landlord.name} (landlord listings), ${peerOwner.name} (peer listings).`);
+  console.log('Remove with: node scripts/seed-demo.mjs --clean');
 }
 
 await (process.argv.includes('--clean') ? clean() : seed());

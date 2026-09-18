@@ -375,6 +375,28 @@ img { display: block; max-width: 100%; }
   box-shadow: var(--shadow-xs);
 }
 .avatar:hover { border-color: var(--emerald); transform: scale(1.05); }
+
+/* Clear-photo control on the editable avatar (AvatarUpload). Sits opposite
+   the camera badge, so neither covers the other. */
+.avatar-remove-btn {
+  position: absolute;
+  top: 0; right: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--surface-2);
+  color: var(--ink-mid);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+.avatar-remove-btn:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+  transform: scale(1.08);
+}
+.avatar-remove-btn:disabled { opacity: 0.5; cursor: default; }
 .avatar-menu {
   position: absolute; right: 0; top: 52px;
   background: var(--surface);
@@ -563,8 +585,8 @@ img { display: block; max-width: 100%; }
 
 /* Badge overlay on the photo.
    These sit on top of an arbitrary photo, so the translucent tints used for
-   inline badges are unreadable here. They get an opaque dark scrim and light
-   text in BOTH themes — the backdrop is the photo, not the page. */
+   inline badges are unreadable here. They get a near-opaque white pill in
+   BOTH themes — the backdrop is the photo, not the page. */
 .listing-photo-badges {
   position: absolute;
   top: 12px; left: 12px;
@@ -573,22 +595,101 @@ img { display: block; max-width: 100%; }
   max-width: calc(100% - 24px);
 }
 .listing-photo-badges .badge {
-  background: rgba(10, 15, 13, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  border-radius: 100px;
+  color: #1E293B;
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
 }
-.listing-photo-badges .badge-gold                       { color: #F5C451; }
+.listing-photo-badges .badge svg { width: 11px; height: 11px; }
+
+/* Inks chosen to read on the white pill, not on the page. */
+.listing-photo-badges .badge-gold    { color: #8A6400; }
 .listing-photo-badges .badge-green,
 .listing-photo-badges .badge-success,
-.listing-photo-badges .badge-navy                       { color: #6EE7B7; }
+.listing-photo-badges .badge-navy    { color: #1A5C45; }
 .listing-photo-badges .badge-red,
-.listing-photo-badges .badge-danger                     { color: #FCA5A5; }
-.listing-photo-badges .badge-blue                       { color: #93C5FD; }
-.listing-photo-badges .badge-amber                      { color: #F5C171; }
-.listing-photo-badges .badge-gray                       { color: #D8DDE3; }
+.listing-photo-badges .badge-danger  { color: #A43225; }
+.listing-photo-badges .badge-blue    { color: #1D4ED8; }
+.listing-photo-badges .badge-amber   { color: #8A5A06; }
+.listing-photo-badges .badge-gray    { color: #334155; }
+
+/* Flatmate match pill — same white-pill language as the status badges, but
+   parked opposite them so the two never collide. */
+.compat-pill {
+  position: absolute;
+  top: 12px; right: 12px;
+  z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1E293B;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  white-space: nowrap;
+}
+.compat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.compat-high .compat-dot { background: #12946A; }
+.compat-mid  .compat-dot { background: #C79009; }
+.compat-low  .compat-dot { background: #C0503F; }
+
+/* Flatmate compatibility card (listing detail). */
+.compat-heading {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 16px; font-size: 15px;
+}
+.compat-heading svg { color: var(--emerald); }
+.compat-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.compat-ring {
+  width: 62px; height: 62px; border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: conic-gradient(var(--compat-tone) var(--compat-pct), var(--border) 0);
+}
+.compat-ring > span {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800; font-size: 17px; color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.compat-ring > span small { font-size: 10px; font-weight: 700; margin-left: 1px; color: var(--ink-muted); }
+.compat-band { font-weight: 700; font-size: 14px; color: var(--ink); }
+.compat-caption { font-size: 12.5px; color: var(--ink-muted); line-height: 1.5; margin-top: 2px; }
+
+.compat-rows { display: flex; flex-direction: column; gap: 11px; }
+.compat-row-top {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  font-size: 12.5px; margin-bottom: 5px;
+}
+.compat-row-label { color: var(--ink-mid); font-weight: 600; }
+.compat-row-values { color: var(--ink-muted); text-align: right; }
+.compat-bar { height: 4px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
+.compat-bar-fill { height: 100%; border-radius: 4px; background: var(--compat-tone); }
+.compat-foot { font-size: 11.5px; color: var(--ink-muted); margin: 14px 0 0; }
+
+/* One tone variable drives the ring, the bars and the card pill dots. */
+.compat-high { --compat-tone: #12946A; }
+.compat-mid  { --compat-tone: #C79009; }
+.compat-low  { --compat-tone: #C0503F; }
+:root[data-theme="dark"] .compat-high { --compat-tone: #34D399; }
+:root[data-theme="dark"] .compat-mid  { --compat-tone: #F2C94C; }
+:root[data-theme="dark"] .compat-low  { --compat-tone: #F87171; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .compat-high { --compat-tone: #34D399; }
+  :root:not([data-theme="light"]) .compat-mid  { --compat-tone: #F2C94C; }
+  :root:not([data-theme="light"]) .compat-low  { --compat-tone: #F87171; }
+}
 
 .listing-body {
   padding: 20px 22px 18px;
@@ -2180,6 +2281,15 @@ html.is-landlord .seeking-nav-link {
   background: var(--tint-red);
 }
 .vote-btn.voted-down:hover { background: var(--tint-red); color: var(--danger); }
+
+/* Delete own comment — quiet until hovered, so it never competes with votes. */
+.vote-btn-danger { border-color: transparent; background: transparent; }
+.vote-btn-danger:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  background: var(--tint-red);
+}
+.vote-btn-danger:disabled { opacity: 0.5; cursor: default; }
 
 /* ════════════════════════════════════════
    ACTIVITY FEED (dashboard)

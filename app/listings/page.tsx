@@ -3,6 +3,7 @@ import ListingsClient from './ListingsClient';
 import type { Zone, Listing } from '@/types';
 import { Suspense } from 'react';
 import { canonicalSearch, savedSearchesAvailable } from '@/lib/savedSearch';
+import { scoreCompatibility } from '@/lib/compatibility';
 
 export const metadata = {
   title: 'Browse Listings - Nestly',
@@ -113,6 +114,26 @@ export default async function ListingsPage({ searchParams }: { searchParams: Pro
   if (isLoggedIn) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
     if (profile?.role === 'admin') isAdmin = true;
+  }
+
+  // Flatmate compatibility. Needs both sides' preferences, so it's only
+  // attached to the cards where the lister has filled theirs in too — a
+  // partial score would be worse than none on a page people compare on.
+  if (isLoggedIn && initialListings.length > 0) {
+    const { data: myPrefs } = await supabase
+      .from('user_preferences').select('*').eq('user_id', user!.id).maybeSingle();
+    if (myPrefs) {
+      const listerIds = [...new Set(initialListings.map(l => l.user_id).filter(Boolean))];
+      const { data: listerPrefs } = await supabase
+        .from('user_preferences').select('*').in('user_id', listerIds);
+      const byUser = new Map((listerPrefs || []).map(pref => [pref.user_id, pref]));
+      initialListings = initialListings.map(l => {
+        const theirs = l.user_id === user!.id ? null : byUser.get(l.user_id);
+        return theirs
+          ? { ...l, compatibility: scoreCompatibility(myPrefs, theirs, l.gender_pref).score }
+          : l;
+      });
+    }
   }
 
   // Saved searches only surface once migration 0006 exists.

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { ThumbsUp, ThumbsDown, MessageSquare, Send } from 'lucide-react';
-import { addComment, voteComment } from '@/app/actions/comments';
+import { ThumbsUp, ThumbsDown, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { addComment, voteComment, deleteComment } from '@/app/actions/comments';
 import { toast } from 'sonner';
 import { fmtDate, avatarInitials } from '@/lib/utils';
 import Link from 'next/link';
@@ -33,6 +33,7 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const doSubmit = async (text: string) => {
     if (!text || !isLoggedIn) return;
@@ -93,6 +94,23 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
       toast.error(res.error);
       setComments(initialComments); // revert
     }
+  };
+
+  const handleDelete = async (commentId: number) => {
+    if (!window.confirm('Delete this comment? This cannot be undone.')) return;
+
+    const snapshot = comments;
+    setDeletingId(commentId);
+    setComments(prev => prev.filter(c => c.comment_id !== commentId));
+
+    const res = await deleteComment(commentId, itemId, type);
+    if (res.error) {
+      toast.error(res.error);
+      setComments(snapshot); // put it back
+    } else {
+      toast.success('Comment deleted.');
+    }
+    setDeletingId(null);
   };
 
   return (
@@ -191,6 +209,18 @@ export default function CommentSection({ itemId, initialComments, isLoggedIn, cu
                     <ThumbsDown size={14} fill={comment.user_vote === -1 ? 'currentColor' : 'none'} />
                     <span className="vote-count">{comment.downvotes}</span>
                   </button>
+                  {currentUserId && comment.user_id === currentUserId && (
+                    <button
+                      type="button"
+                      className="vote-btn vote-btn-danger"
+                      onClick={() => handleDelete(comment.comment_id)}
+                      disabled={deletingId === comment.comment_id}
+                      title="Delete comment"
+                    >
+                      <Trash2 size={14} />
+                      <span className="vote-count">Delete</span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

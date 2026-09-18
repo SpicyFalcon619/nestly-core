@@ -16,6 +16,8 @@ import Link from 'next/link';
 import MessageButton from '@/components/MessageButton';
 import ShareButton from '@/components/ShareButton';
 import ListingBreadcrumb from '@/components/ListingBreadcrumb';
+import CompatibilityCard from '@/components/CompatibilityCard';
+import { scoreCompatibility, type CompatResult } from '@/lib/compatibility';
 import ListingCard from '@/components/ListingCard';
 import type { Metadata } from 'next';
 
@@ -116,6 +118,22 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       .limit(1)
       .maybeSingle();
     existingApplication = appData;
+  }
+
+  // Flatmate compatibility against whoever listed the place. Both sides need a
+  // preferences row; with only the lister's, the card becomes the prompt to
+  // fill yours in.
+  let compat: CompatResult | null = null;
+  let compatNeedsMine = false;
+  if (isLoggedIn && user!.id !== listing.user_id && !isAdmin) {
+    const { data: prefRows } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .in('user_id', [user!.id, listing.user_id]);
+    const mine = prefRows?.find(r => r.user_id === user!.id) ?? null;
+    const theirs = prefRows?.find(r => r.user_id === listing.user_id) ?? null;
+    if (mine && theirs) compat = scoreCompatibility(mine, theirs, listing.gender_pref);
+    else if (theirs) compatNeedsMine = true;
   }
 
   // Fetch comments
@@ -405,6 +423,14 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
                 </div>
               )}
             </div>
+
+            {(compat || compatNeedsMine) && (
+              <CompatibilityCard
+                result={compat}
+                otherName={owner.name}
+                needsMyPreferences={compatNeedsMine}
+              />
+            )}
 
             {/* White card — owner info + apply */}
             <div className="card" style={{ padding: '24px' }}>

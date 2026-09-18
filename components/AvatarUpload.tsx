@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { Camera } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 import { avatarInitials } from '@/lib/utils';
 
 interface AvatarUploadProps {
@@ -11,10 +11,26 @@ interface AvatarUploadProps {
   name: string;
   currentUrl?: string;
   onUpload?: (url: string) => void;
+  /** Called after the picture is cleared, so the parent can drop its copy. */
+  onRemove?: () => void;
   /** Diameter in pixels. Defaults to 96. */
   size?: number;
   /** If false, clicking does nothing (display-only mode). */
   editable?: boolean;
+}
+
+/**
+ * Public URL → object path inside the bucket, e.g.
+ * https://x.supabase.co/storage/v1/object/public/uiunest/avatars/<id>/avatar.jpg?t=1
+ * becomes avatars/<id>/avatar.jpg. Returns null for anything that isn't a
+ * file we uploaded for this user, so removal can never delete someone else's.
+ */
+function ownAvatarPath(url: string, userId: string): string | null {
+  const marker = '/uiunest/';
+  const at = url.indexOf(marker);
+  if (at < 0) return null;
+  const path = url.slice(at + marker.length).split('?')[0];
+  return path.startsWith(`avatars/${userId}/`) ? decodeURIComponent(path) : null;
 }
 
 export default function AvatarUpload({
@@ -22,11 +38,13 @@ export default function AvatarUpload({
   name,
   currentUrl,
   onUpload,
+  onRemove,
   size = 96,
   editable = true,
 }: AvatarUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [preview, setPreview] = useState<string | undefined>(currentUrl);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,12 +99,46 @@ export default function AvatarUpload({
     if (inputRef.current) inputRef.current.value = '';
   };
 
+  const handleRemove = async (e: React.MouseEvent) => {
+    // The whole circle opens the file picker — don't do that on the way out.
+    e.stopPropagation();
+    if (!preview || removing || uploading) return;
+    if (!window.confirm('Remove your profile picture? Your initials will be shown instead.')) return;
+
+    setRemoving(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('profiles')
+      .update({ profile_pic: null })
+      .eq('id', userId);
+
+    if (error) {
+      toast.error(error.message);
+      setRemoving(false);
+      return;
+    }
+
+    // Best effort: the profile row is the source of truth, so a storage
+    // policy that forbids delete must not turn this into a failed removal.
+    const path = ownAvatarPath(preview, userId);
+    if (path) {
+      const { error: storageError } = await supabase.storage.from('uiunest').remove([path]);
+      if (storageError) console.warn('Avatar file left in storage:', storageError.message);
+    }
+
+    setPreview(undefined);
+    onRemove?.();
+    setRemoving(false);
+    toast.success('Profile picture removed.');
+  };
+
   const iconSize = Math.round(size * 0.22);
   const badgeSize = Math.round(size * 0.33);
+  const busy = uploading || removing;
 
   return (
     <div
-      onClick={editable ? () => inputRef.current?.click() : undefined}
+      onClick={editable && !busy ? () => inputRef.current?.click() : undefined}
       title={editable ? 'Change profile picture' : undefined}
       style={{
         position: 'relative',
@@ -107,6 +159,8 @@ export default function AvatarUpload({
             objectFit: 'cover',
             border: '3px solid var(--border)',
             display: 'block',
+            opacity: removing ? 0.5 : 1,
+            transition: 'opacity 0.2s',
           }}
         />
       ) : (
@@ -139,7 +193,7 @@ export default function AvatarUpload({
             width: badgeSize,
             height: badgeSize,
             borderRadius: '50%',
-            background: uploading ? 'var(--ink-muted)' : 'var(--emerald)',
+            background: busy ? 'var(--ink-muted)' : 'var(--emerald)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -151,13 +205,27 @@ export default function AvatarUpload({
         </div>
       )}
 
+      {editable && preview && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          disabled={busy}
+          aria-label="Remove profile picture"
+          title="Remove profile picture"
+          className="avatar-remove-btn"
+          style={{ width: badgeSize, height: badgeSize }}
+        >
+          <X size={iconSize} />
+        </button>
+      )}
+
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
         style={{ display: 'none' }}
         onChange={handleFile}
-        disabled={uploading}
+        disabled={busy}
       />
     </div>
   );

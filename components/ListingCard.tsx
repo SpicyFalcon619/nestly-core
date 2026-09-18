@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { ShieldCheck, User, Bath, Zap, Sofa, MapPin } from 'lucide-react';
 import type { Listing } from '@/types';
 import { fmt, propertyTypeLabel, statusColor, statusLabel } from '@/lib/utils';
+import { compatBand } from '@/lib/compatibility';
 
 export default function ListingCard({ listing }: { listing: Listing }) {
   const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='600' height='400' fill='%23EEF7F2'/><text x='50%' y='50%' font-family='sans-serif' font-size='18' fill='%231A5C45' text-anchor='middle' dominant-baseline='middle'>No Photo</text></svg>";
@@ -34,6 +35,17 @@ export default function ListingCard({ listing }: { listing: Listing }) {
           )}
           <span className={`badge ${statusColor(listing.status)}`}>{statusLabel(listing.status)}</span>
         </div>
+
+        {/* Flatmate match — only present when both sides have preferences set. */}
+        {typeof listing.compatibility === 'number' && (
+          <div
+            className={`compat-pill compat-${compatBand(listing.compatibility).tone}`}
+            title={`${compatBand(listing.compatibility).label} — based on your lifestyle preferences`}
+          >
+            <span className="compat-dot" />
+            {listing.compatibility}% match
+          </div>
+        )}
       </div>
 
       <div className="listing-body">

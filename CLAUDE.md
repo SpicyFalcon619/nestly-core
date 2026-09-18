@@ -305,8 +305,10 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
   `accepted` (or they own the listing), with a lock note otherwise.
 - Overlay badges on listing photos (`VERIFIED`, `SOON VACANT`) used the
   translucent tint backgrounds and were unreadable over a photo. They
-  now get an opaque dark scrim with light text in **both** themes — the
-  backdrop there is the photo, not the page.
+  now get a small, near-opaque **white** pill (blurred, pill radius, dark
+  per-status ink) in **both** themes — the backdrop there is the photo, not
+  the page. The first attempt was a dark scrim, which read as a heavy black
+  slab on the card — do not go back to it.
 - The detail fact read "Listed by — Landlord Listed"; the value is now
   just "Landlord" / "Fellow student".
 
@@ -376,15 +378,66 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
     carry, so supabase-js returns `error: null` — even for a table named
     `definitely_not_a_table`. Don't use `head: true` as an existence check.
 
+## Compatibility, comment deletion, avatar removal (2026-09-18)
+
+- **The 8-dimension compatibility score existed only in marketing copy.**
+  The homepage promised it, `user_preferences` stored the inputs, and
+  `.compat-circle` sat unused in the CSS — nothing ever computed a score.
+  `lib/compatibility.ts` now does: eight weighted dimensions (sleep 16,
+  cleanliness 16, noise 14, guests 12, smoking 12, diet 12, gender 10,
+  study hours 8), each 0–1, summed to 0–100. A shared "flexible" answer
+  scores 0.85, not 1 — it means neither side has a constraint, not that
+  they want the same thing. The listing's own `gender_pref` overrides the
+  lister's personal answer for that dimension, since the house rule is
+  what actually applies to a viewer.
+- **It compares the viewer to the lister** — deliberately not to the
+  current occupants. Who lives where is only visible through
+  `applications`, whose RLS restricts SELECT to the applicant and the
+  listing owner; surfacing it to browsers would need the service role and
+  would leak the person→address link. `user_preferences` is world-readable
+  by policy, so the lister comparison needs no privileged read.
+- Consequence worth knowing: **only student-listed (peer) listings can
+  ever score**, because `ProfileContent` shows the preferences form to
+  students only, so a landlord has no preferences row. Landlord listings
+  show nothing at all rather than a partial score. `scripts/seed-demo.mjs`
+  therefore assigns `peer_listing` rows to a student owner (preferring one
+  who has preferences) instead of the landlord — otherwise the feature is
+  invisible in demo data, which is exactly how it was reported.
+- Surfaces: a `.compat-pill` ("59% match") top-right of the card photo,
+  opposite the status badges, and `components/CompatibilityCard.tsx` in
+  the listing detail's right column — conic-gradient ring plus a bar per
+  dimension with both sides' answers. When the lister has preferences and
+  the viewer doesn't, the same card becomes the prompt to fill them in.
+- **Own comments can be deleted.** `deleteComment` verifies authorship
+  through the user's own client, then checks the affected row count: the
+  comment tables were made by hand, so a DELETE their RLS doesn't allow
+  returns success with zero rows rather than an error. Only then does it
+  fall back to the service role, re-asserting `comment_id` + `user_id`,
+  and it clears the vote rows first (no guaranteed ON DELETE CASCADE).
+- **Profile pictures can be removed**, not just replaced. `AvatarUpload`
+  gained an × opposite the camera badge; it nulls `profiles.profile_pic`
+  and then best-effort deletes the storage object, only if the URL parses
+  to `avatars/<own id>/…` inside the `uiunest` bucket. The DB row is the
+  source of truth, so a storage policy that forbids delete must not turn
+  this into a failed removal.
+- **Verified with a real login.** A throwaway student account was created
+  with the admin API, driven through Playwright (comment post → delete →
+  reload, avatar removal → reload, compatibility card and pill in both
+  themes), then deleted. That closes the "never clicked through, no test
+  account" gap for these four features. The demo row "Two-seat shared
+  room near Notun Bazar bus stand" was also re-pointed to the Student Test
+  profile, matching what `peer_listing` means.
+
 **Migrations not yet applied (checked 2026-09-17):** 0004 (zone rename),
 0005 (total_monthly trigger), 0006 (saved searches).
 
 **Still open:**
 - `expected_vacate_date` is displayed but no form collects it.
 - The comment tables exist in the live DB but in no migration.
-- Admin/verification screens and anything behind a login (photo editor,
-  contact reveal, withdrawal, saved-search UI) are verified by typecheck
-  and query-shape checks only — never clicked through, no test account.
+- Admin/verification screens and the remaining logged-in flows (photo
+  editor, contact reveal, withdrawal, saved-search UI) are still verified
+  by typecheck and query-shape checks only. The Playwright + throwaway
+  account recipe above is the way to close these too.
 
 ## Pending — asked for, not yet done
 
