@@ -8,7 +8,7 @@ import { notFound } from 'next/navigation';
 import ListingMap from '@/components/ListingMap';
 import PhotoGallery from '@/components/PhotoGallery';
 import StatusChanger from '@/components/StatusChanger';
-import { fetchCommentsWithAuthors } from '@/lib/comments';
+import { fetchCommentsWithAuthors, commentThreadsAvailable, mentionablesFrom } from '@/lib/comments';
 import ReportButton from '@/components/ReportButton';
 import CommentSection from '@/components/comments/CommentSection';
 import UserRating from '@/components/ratings/UserRating';
@@ -153,6 +153,11 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
       });
     }
   }
+
+
+  // Replies and @mentions need migration 0007; without it comments stay flat.
+  const threadsEnabled = await commentThreadsAvailable(supabase, 'listing_comments');
+  const mentionable = mentionablesFrom(finalComments as any, { id: listing.user_id, name: owner.name, profile_slug: owner.profile_slug, is_public: owner.is_public });
 
   // Fetch ratings for the landlord
   let averageRating = 0;
@@ -362,6 +367,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               isLoggedIn={isLoggedIn}
               currentUserId={user?.id}
               type="listing"
+              threadsEnabled={threadsEnabled}
+              mentionable={mentionable}
             />
           </div>
         </div>

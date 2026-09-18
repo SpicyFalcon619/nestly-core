@@ -28,9 +28,28 @@ export async function fetchCommentsWithAuthors(
     .select('id, name, profile_pic, profile_slug, is_public')
     .in('id', authorIds);
 
+  // Vote totals come from the votes table, not the comment's own columns.
+  // Those columns are denormalised and a voter cannot UPDATE someone else's
+  // comment row (RLS lets only the author), so they can be stale — rows that
+  // predate the fix in voteComment still read 0 with real votes against them.
+  const votesTable = table === 'item_comments' ? 'item_comment_votes' : 'listing_comment_votes';
+  const { data: votes } = await supabase
+    .from(votesTable)
+    .select('comment_id, vote_type')
+    .in('comment_id', comments.map(c => c.comment_id));
+
+  const tally = new Map<number, { up: number; down: number }>();
+  for (const v of votes || []) {
+    const row = tally.get(v.comment_id) ?? { up: 0, down: 0 };
+    if (v.vote_type === 1) row.up++; else if (v.vote_type === -1) row.down++;
+    tally.set(v.comment_id, row);
+  }
+
   const byId = new Map((profiles || []).map(p => [p.id, p]));
   return comments.map(c => ({
     ...c,
+    upvotes: tally.get(c.comment_id)?.up ?? 0,
+    downvotes: tally.get(c.comment_id)?.down ?? 0,
     user: byId.get(c.user_id) ?? null,
   }));
 }

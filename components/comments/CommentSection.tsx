@@ -269,6 +269,11 @@ export default function CommentSection({
     if (res.error) {
       toast.error(res.error);
       setComments(initialComments); // revert
+    } else if (typeof res.upvotes === 'number') {
+      // Server recount wins — the optimistic guess can't see other people's votes.
+      setComments(prev => prev.map(c =>
+        c.comment_id === commentId ? { ...c, upvotes: res.upvotes!, downvotes: res.downvotes! } : c
+      ));
     }
   };
 

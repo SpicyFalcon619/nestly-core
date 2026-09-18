@@ -118,13 +118,24 @@ export async function addComment(
   };
 }
 
+/**
+ * Casts, switches or removes a vote, then recounts.
+ *
+ * The comment row's upvotes/downvotes are denormalised, and the RLS policy on
+ * the hand-made comment tables only lets the AUTHOR update their row — so a
+ * voter's UPDATE used to affect zero rows and return no error, which is why
+ * counts reset to 0 on reload while the vote itself stuck. The counts are now
+ * recomputed from the votes table (readable by everyone) and written with the
+ * service role, and the true totals are returned so the UI can't drift either.
+ */
 export async function voteComment(commentId: number, voteType: 1 | -1, itemId: number, type: 'item' | 'listing' = 'item') {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'You must be logged in to vote.' };
 
-  const tableVotes    = type === 'item' ? 'item_comment_votes'    : 'listing_comment_votes';
-  const tableComments = type === 'item' ? 'item_comments'         : 'listing_comments';
+  const tableVotes    = type === 'item' ? 'item_comment_votes' : 'listing_comment_votes';
+  const tableComments = type === 'item' ? 'item_comments'      : 'listing_comments';
+  const link          = type === 'item' ? `/exchange/${itemId}` : `/listings/${itemId}`;
 
   const { data: existingVote } = await supabase
     .from(tableVotes)
@@ -133,28 +144,33 @@ export async function voteComment(commentId: number, voteType: 1 | -1, itemId: n
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const { data: current } = await supabase.from(tableComments).select('upvotes, downvotes').eq('comment_id', commentId).single();
-  let up = current?.upvotes || 0;
-  let dn = current?.downvotes || 0;
-
   if (existingVote) {
-    if (existingVote.vote_type === voteType) {
-      await supabase.from(tableVotes).delete().eq('comment_id', commentId).eq('user_id', user.id);
-      if (voteType === 1) up--; else dn--;
-    } else {
-      await supabase.from(tableVotes).update({ vote_type: voteType }).eq('comment_id', commentId).eq('user_id', user.id);
-      if (voteType === 1) { up++; dn--; } else { dn++; up--; }
-    }
+    // Clicking the same arrow again clears the vote.
+    const { error } = existingVote.vote_type === voteType
+      ? await supabase.from(tableVotes).delete().eq('comment_id', commentId).eq('user_id', user.id)
+      : await supabase.from(tableVotes).update({ vote_type: voteType }).eq('comment_id', commentId).eq('user_id', user.id);
+    if (error) return { error: error.message };
   } else {
     const { error } = await supabase.from(tableVotes).insert({ comment_id: commentId, user_id: user.id, vote_type: voteType });
     if (error) return { error: error.message };
-    if (voteType === 1) up++; else dn++;
   }
 
-  await supabase.from(tableComments).update({ upvotes: Math.max(0, up), downvotes: Math.max(0, dn) }).eq('comment_id', commentId);
+  const { data: votes } = await supabase
+    .from(tableVotes)
+    .select('vote_type')
+    .eq('comment_id', commentId);
 
-  revalidatePath(type === 'item' ? `/exchange/${itemId}` : `/listings/${itemId}`);
-  return { success: true, upvotes: Math.max(0, up), downvotes: Math.max(0, dn) };
+  const upvotes   = (votes || []).filter(v => v.vote_type === 1).length;
+  const downvotes = (votes || []).filter(v => v.vote_type === -1).length;
+
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  await admin.from(tableComments).update({ upvotes, downvotes }).eq('comment_id', commentId);
+
+  revalidatePath(link);
+  return { success: true, upvotes, downvotes };
 }
 
 /**

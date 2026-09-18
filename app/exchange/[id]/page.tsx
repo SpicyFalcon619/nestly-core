@@ -9,7 +9,7 @@ import UserRating from '@/components/ratings/UserRating';
 import OffersSection from '@/components/OffersSection';
 import MessageButton from '@/components/MessageButton';
 import PhotoGallery from '@/components/PhotoGallery';
-import { fetchCommentsWithAuthors } from '@/lib/comments';
+import { fetchCommentsWithAuthors, commentThreadsAvailable, mentionablesFrom } from '@/lib/comments';
 
 export default async function ExchangeItemDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -70,6 +70,11 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
       });
     }
   }
+
+
+  // Replies and @mentions need migration 0007; without it comments stay flat.
+  const threadsEnabled = await commentThreadsAvailable(supabase, 'item_comments');
+  const mentionable = mentionablesFrom(finalComments as any, { id: item.seller_id, name: item.seller?.name, profile_slug: item.seller?.profile_slug, is_public: item.seller?.is_public });
 
   // Fetch target user's ratings to calculate average
   let averageRating = 0;
@@ -234,6 +239,8 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
               initialComments={finalComments as any}
               isLoggedIn={isLoggedIn}
               currentUserId={user?.id}
+              threadsEnabled={threadsEnabled}
+              mentionable={mentionable}
             />
           </div>
         </div>
