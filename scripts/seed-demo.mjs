@@ -166,6 +166,82 @@ const LISTINGS = [
 
 const TITLES = LISTINGS.map(l => l.title);
 
+// Nestly Exchange demo stock. Sellers are students — the marketplace is
+// students passing furniture on to the next batch, not a shop.
+const ITEMS = [
+  {
+    title: 'Study desk with bookshelf, 4ft',
+    category: 'furniture', item_condition: 'good', asking_price: 3200,
+    zone: 'Aftabnagar',
+    description:
+      'Solid board desk with a three-shelf unit on top. Used it for two years of CSE assignments; ' +
+      'a few pen marks on the surface, nothing structural. Selling because I am moving to a furnished room.',
+    reason_for_selling: 'Moving to a furnished room',
+    photos: photo('nestly-desk', 3),
+  },
+  {
+    title: 'Single bed frame + mattress',
+    category: 'furniture', item_condition: 'fair', asking_price: 4500,
+    zone: 'Notun Bazar',
+    description:
+      'Wooden single bed with a 3-inch foam mattress. Frame is sturdy; the mattress has softened in the middle. ' +
+      'Buyer arranges pickup — it comes apart into three pieces and fits in a CNG.',
+    reason_for_selling: 'Graduating, leaving Dhaka',
+    photos: photo('nestly-bed', 2),
+  },
+  {
+    title: 'Walton 1.5 ton AC, 3 years old',
+    category: 'appliances', item_condition: 'good', asking_price: 21000,
+    zone: 'Shatarkul',
+    description:
+      'Cools fast, serviced in April with the receipt to prove it. Remote and mounting bracket included. ' +
+      'Uninstalling is on the buyer; I can recommend the technician who services it.',
+    reason_for_selling: 'Landlord installed one in the flat',
+    photos: photo('nestly-ac', 3),
+  },
+  {
+    title: 'Rice cooker and induction stove set',
+    category: 'kitchen', item_condition: 'like_new', asking_price: 2800,
+    zone: 'Aftabnagar',
+    description:
+      'Bought in January, used maybe ten times before the mess started cooking together. ' +
+      'Both work perfectly, box and manual for the induction stove included.',
+    reason_for_selling: 'Mess cooks together now',
+    photos: photo('nestly-kitchen', 2),
+  },
+  {
+    title: 'HP 15s laptop, i5 11th gen, 8GB RAM',
+    category: 'electronics', item_condition: 'good', asking_price: 42000,
+    zone: 'Badda Campus Area',
+    description:
+      'Handled four years of coursework — VS Code, browser tabs, the occasional game. ' +
+      'Battery holds about three hours now. Charger included, no dents, screen is clean.',
+    reason_for_selling: 'Upgraded for final-year project work',
+    photos: photo('nestly-laptop', 3),
+  },
+  {
+    title: 'Steel almirah, two doors with lock',
+    category: 'furniture', item_condition: 'fair', asking_price: 6500,
+    zone: 'Nurer Chala',
+    description:
+      'Two-door steel almirah with a working lock and a mirror inside one door. ' +
+      'Some rust at the base, hidden once it stands against a wall. Heavy — bring two people.',
+    reason_for_selling: 'Room came with a built-in wardrobe',
+    photos: photo('nestly-almirah', 2),
+  },
+  {
+    title: 'Study lamp and desk organiser',
+    category: 'study', item_condition: 'like_new', asking_price: 750,
+    zone: 'Notun Bazar',
+    description: 'Clip-on LED lamp with three brightness levels plus a small wooden organiser for pens and notes.',
+    reason_for_selling: 'Duplicate — got one as a gift',
+    photos: photo('nestly-lamp', 2),
+  },
+];
+
+const ITEM_TITLES = ITEMS.map(i => i.title);
+
+
 async function clean() {
   const { data: rows } = await db.from('listings').select('listing_id, title').in('title', TITLES);
   if (!rows?.length) return console.log('Nothing to clean — no demo listings found.');
@@ -174,6 +250,15 @@ async function clean() {
   const { error } = await db.from('listings').delete().in('listing_id', ids);
   if (error) return console.error('Clean failed:', error.message);
   console.log(`Removed ${ids.length} demo listing(s): ${ids.join(', ')}`);
+}
+
+async function cleanItems() {
+  const { data: rows } = await db.from('items').select('item_id, title').in('title', ITEM_TITLES);
+  if (!rows?.length) return console.log('Nothing to clean — no demo items found.');
+  const ids = rows.map(r => r.item_id);
+  const { error } = await db.from('items').delete().in('item_id', ids);
+  if (error) return console.error('Item clean failed:', error.message);
+  console.log(`Removed ${ids.length} demo item(s): ${ids.join(', ')}`);
 }
 
 async function seed() {
@@ -226,7 +311,38 @@ async function seed() {
     console.log(`insert #${inserted.listing_id}  ${l.title.slice(0, 50)}…  (৳${total.toLocaleString('en-BD')}/mo)`);
   }
   console.log(`\nOwners: ${landlord.name} (landlord listings), ${peerOwner.name} (peer listings).`);
+  await seedItems(peerOwner, zoneId);
   console.log('Remove with: node scripts/seed-demo.mjs --clean');
 }
 
-await (process.argv.includes('--clean') ? clean() : seed());
+async function seedItems(seller, zoneId) {
+  const { data: existing } = await db.from('items').select('title').in('title', ITEM_TITLES);
+  const already = new Set((existing || []).map(r => r.title));
+
+  for (const item of ITEMS) {
+    if (already.has(item.title)) {
+      console.log(`skip   ${item.title.slice(0, 50)}… (exists)`);
+      continue;
+    }
+    const { zone, photos, ...rest } = item;
+    const { data: inserted, error } = await db.from('items').insert({
+      ...rest,
+      seller_id: seller.id,
+      zone_id: zoneId(zone),
+      status: 'available',
+      // photo_url is what older rows use; keep both so either read path works.
+      photo_url: photos[0],
+      photos,
+    }).select('item_id').single();
+
+    if (error) { console.error(`FAILED ${item.title}: ${error.message}`); continue; }
+    console.log(`insert item #${inserted.item_id}  ${item.title.slice(0, 44)}…  (৳${item.asking_price.toLocaleString('en-BD')})`);
+  }
+}
+
+if (process.argv.includes('--clean')) {
+  await clean();
+  await cleanItems();
+} else {
+  await seed();
+}
