@@ -53,6 +53,7 @@ export const DEMO_ACCOUNTS = [
     gender: 'male',
     phone: '+8801711000103',
     bio: 'Demo landlord account. Rents out rooms in Aftabnagar and Shatarkul.',
+    verified: true,
     // House rules, in the same eight dimensions. A landlord with no row here
     // means none of their listings can ever show a compatibility score.
     prefs: {
@@ -125,6 +126,28 @@ export async function ensureDemoAccounts(db) {
     if (account.prefs) {
       await db.from('user_preferences')
         .upsert({ user_id: id, ...account.prefs }, { onConflict: 'user_id' });
+    }
+
+    // CreateListingModal refuses to open without an approved verification, so
+    // an unverified demo landlord can't post anything — which makes the demo
+    // account useless for the one thing landlords do.
+    if (account.verified) {
+      const { data: existingVerif } = await db
+        .from('verifications').select('verification_id, status')
+        .eq('user_id', id).order('submitted_at', { ascending: false }).limit(1).maybeSingle();
+
+      if (!existingVerif) {
+        await db.from('verifications').insert({
+          user_id: id,
+          nid_type: 'National ID',
+          document_path: 'demo://verified-by-seed',
+          description: 'Approved automatically for the demo account.',
+          status: 'approved',
+        });
+      } else if (existingVerif.status !== 'approved') {
+        await db.from('verifications')
+          .update({ status: 'approved' }).eq('verification_id', existingVerif.verification_id);
+      }
     }
 
     out[account.key] = { id, name: account.name, email: account.email };

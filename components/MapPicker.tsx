@@ -180,21 +180,25 @@ export default function MapPicker({ initialLat = 23.7979, initialLng = 90.4497, 
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', flex: '1', minWidth: '250px' }}>
+        {/* Not a <form>: this component is rendered inside the create-listing
+            form, and a nested form is invalid HTML — React warns about it and
+            the browser drops it, which would send Enter here to Publish. */}
+        <div style={{ display: 'flex', gap: '8px', flex: '1', minWidth: '250px' }}>
           <div style={{ position: 'relative', flex: '1' }}>
             <MapPin size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--gray)' }} />
-            <input 
-              type="text" 
-              placeholder="Search a location..." 
+            <input
+              type="text"
+              placeholder="Search a location..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(e); } }}
               style={{ width: '100%', padding: '8px 8px 8px 32px', borderRadius: '6px', border: '1px solid var(--border)' }}
             />
           </div>
-          <button type="submit" className="btn btn-outline btn-sm" disabled={isSearching}>
+          <button type="button" className="btn btn-outline btn-sm" disabled={isSearching} onClick={handleSearch}>
             {isSearching ? '...' : <Search size={16} />}
           </button>
-        </form>
+        </div>
 
         <button type="button" className="btn btn-outline btn-sm" onClick={handleGeolocation} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Navigation size={16} /> Use My Location

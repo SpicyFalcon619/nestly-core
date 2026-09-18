@@ -378,6 +378,41 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
     carry, so supabase-js returns `error: null` — even for a table named
     `definitely_not_a_table`. Don't use `head: true` as an existence check.
 
+## Publish flow + migration status (2026-09-18, third pass)
+
+**All migrations 0004-0007 are now applied** (verified: zone renamed, saved
+searches present, comment threads present, and a deliberately wrong
+total_monthly of 1 was rewritten to the correct 35,800 on write).
+
+Found by finally click-testing the publish flow end to end:
+
+- **CreateListingModal saved no resident preferences, ever.** The upsert used
+  `sleep / guest / cleanliness / noise / smoking` — none of which are columns
+  on `user_preferences` (`sleep_schedule`, `guest_policy`,
+  `cleanliness_score`, `noise_tolerance`, `smoking_tolerance`) — and the
+  CustomSelect **values were human labels** ("Early Bird (before 11pm)") rather
+  than the enum values. PostgREST answered 400, nothing checked the error, and
+  publishing carried on. That whole section of the form was decorative. Values
+  are now the enums, columns are correct, and a failure raises a toast saying
+  the listing published but the preferences didn't.
+- **`/listings/new` doesn't exist** — the dashboard's "+ New Listing" button
+  pointed there, the `[id]` route matched "new", and users got a not-found
+  page. It now links to `/listings?new=1`, which opens the create modal.
+- **MapPicker rendered a `<form>` inside the create-listing `<form>`** —
+  invalid HTML, a React hydration warning, and Enter in the location search
+  would have reached Publish. It's a div with an explicit Enter handler now.
+- `CreateListingModal` returns null unless the account has an **approved
+  verification**, so the demo landlord gets one from the seed
+  (`verified: true` in `demo-accounts.mjs`) — otherwise the demo account
+  can't do the one thing landlords do.
+
+Saved-search alerts verified end to end: landlord published a matching
+Aftabnagar single room, the student holding "Aftabnagar · Single Room · up to
+৳20,000" got the `saved_search_match` notification, and
+`saved_search_alerts` recorded the pair so it can't fire twice. Threaded
+replies, @mentions and cascade-delete were verified the same way, across two
+accounts.
+
 ## Compatibility, comment deletion, avatar removal (2026-09-18)
 
 - **The 8-dimension compatibility score existed only in marketing copy.**
@@ -486,9 +521,8 @@ for tok in $(grep -rhoE "var\(--[a-z0-9-]+" app components --include="*.tsx" --i
   takes `variant="house"` for those: "Lifestyle fit", and the right-hand
   value reads as the house rule rather than a flatmate's habit.
 
-**Migrations not yet applied (checked 2026-09-18):** 0004 (zone rename),
-0005 (total_monthly trigger), 0006 (saved searches), 0007 (comment threads +
-mentions).
+**Migrations 0004-0007 were applied on 2026-09-18** and verified from the
+app, not just by the files existing.
 
 **Still open:**
 - `expected_vacate_date` is displayed but no form collects it.

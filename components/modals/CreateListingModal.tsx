@@ -45,11 +45,11 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }: Creat
     caretaker_fee: '0',
     
     // Preferences
-    sleep: 'Flexible',
-    diet: 'Non-Vegetarian',
-    guest: 'Allowed',
+    sleep: 'flexible',
+    diet: 'non_veg',
+    guest: 'allowed',
     cleanliness: '4',
-    noise: 'Moderate',
+    noise: 'moderate',
     smoking: false,
   });
 
@@ -219,16 +219,24 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }: Creat
         ...amenities
       });
 
-      // 5. Upsert User Preferences
-      await supabase.from('user_preferences').upsert({
+      // 5. Upsert User Preferences.
+      // These column names were wrong (sleep/guest/cleanliness/noise/smoking),
+      // so every publish sent a 400 that nothing checked and the whole section
+      // silently saved nothing — including the house rules the compatibility
+      // score is computed from.
+      const { error: prefError } = await supabase.from('user_preferences').upsert({
         user_id: user.id,
-        sleep: formData.sleep,
+        sleep_schedule: formData.sleep,
         diet: formData.diet,
-        guest: formData.guest,
-        cleanliness: parseInt(formData.cleanliness) || 4,
-        noise: formData.noise,
-        smoking: formData.smoking ? 1 : 0
+        guest_policy: formData.guest,
+        cleanliness_score: parseInt(formData.cleanliness) || 4,
+        noise_tolerance: formData.noise,
+        smoking_tolerance: !formData.smoking,
       }, { onConflict: 'user_id' });
+
+      // The listing is already published at this point, so a failure here is a
+      // warning, not a failed publish — but it must not pass unnoticed.
+      if (prefError) toast.error('Listing published, but your resident preferences could not be saved.');
 
       // Trigger admin notification
       await createAdminNotification(
@@ -353,18 +361,20 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }: Creat
         <div className="grid-2">
           <div className="form-group">
             <label>Sleep Schedule</label>
+            {/* Values are the sleep_schedule enum, not the label — the label was
+                being written straight into the column and rejected. */}
             <CustomSelect name="sleep" value={formData.sleep} onChange={v => handleChange('sleep', v)} options={[
-              { value: 'Flexible', label: 'Flexible' },
-              { value: 'Early Bird (before 11pm)', label: 'Early Bird (before 11pm)' },
-              { value: 'Night Owl (after 12am)', label: 'Night Owl (after 12am)' }
+              { value: 'flexible', label: 'Flexible' },
+              { value: 'early', label: 'Early Bird (before 11pm)' },
+              { value: 'late', label: 'Night Owl (after 12am)' }
             ]} />
           </div>
           <div className="form-group">
             <label>Diet</label>
             <CustomSelect name="diet" value={formData.diet} onChange={v => handleChange('diet', v)} options={[
-              { value: 'Non-Vegetarian', label: 'Non-Vegetarian' },
-              { value: 'Vegetarian', label: 'Vegetarian' },
-              { value: 'Strictly Halal', label: 'Strictly Halal' }
+              { value: 'non_veg', label: 'Non-Vegetarian' },
+              { value: 'vegetarian', label: 'Vegetarian' },
+              { value: 'halal_strict', label: 'Strictly Halal' }
             ]} />
           </div>
         </div>
@@ -372,18 +382,18 @@ export default function CreateListingModal({ isOpen, onClose, onSuccess }: Creat
           <div className="form-group">
             <label>Guests</label>
             <CustomSelect name="guest" value={formData.guest} onChange={v => handleChange('guest', v)} options={[
-              { value: 'Allowed', label: 'Allowed' },
-              { value: 'Restricted (weekends only)', label: 'Restricted' },
-              { value: 'Not Allowed', label: 'Not Allowed' }
+              { value: 'allowed', label: 'Allowed' },
+              { value: 'restricted', label: 'Restricted (weekends only)' },
+              { value: 'not_allowed', label: 'Not Allowed' }
             ]} />
           </div>
           <div className="form-group"><label>Cleanliness Standard (1-5)</label><input type="number" required min="1" max="5" value={formData.cleanliness} onChange={e => handleChange('cleanliness', e.target.value)} /></div>
           <div className="form-group">
             <label>Noise Level</label>
             <CustomSelect name="noise" value={formData.noise} onChange={v => handleChange('noise', v)} options={[
-              { value: 'Quiet', label: 'Quiet' },
-              { value: 'Moderate', label: 'Moderate' },
-              { value: 'Lively is fine', label: 'Lively is fine' }
+              { value: 'quiet', label: 'Quiet' },
+              { value: 'moderate', label: 'Moderate' },
+              { value: 'noisy', label: 'Lively is fine' }
             ]} />
           </div>
         </div>

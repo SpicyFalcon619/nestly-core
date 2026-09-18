@@ -55,7 +55,10 @@ export default function ListingsClient({
   const [amenities,   setAmenities]   = useState<Set<string>>(() => listParam(searchParams.get('amenities')));
   const [mapFocusZone, setMapFocusZone] = useState<number | undefined>(undefined);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [listModalOpen, setListModalOpen] = useState(false);
+  // ?new=1 opens the create form. The dashboard links here rather than to a
+  // /listings/new route — there is no such page, and the [id] route matched it,
+  // so the button used to land on "not found".
+  const [listModalOpen, setListModalOpen] = useState(() => searchParams.get('new') === '1');
   const [savingSearch, setSavingSearch] = useState(false);
 
   // Re-sync the controls when the URL changes underneath us (back/forward, a chip

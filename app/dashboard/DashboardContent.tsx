@@ -299,7 +299,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, color: 'var(--navy)' }}>My Properties</h3>
-                <Link href="/listings/new" className="btn btn-primary btn-sm">+ New Listing</Link>
+                <Link href="/listings?new=1" className="btn btn-primary btn-sm">+ New Listing</Link>
               </div>
               {myListings.length === 0 ? (
                 <p style={{ color: 'var(--ink-muted)', textAlign: 'center', padding: '24px 0' }}>No listings yet.</p>
