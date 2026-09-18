@@ -129,6 +129,9 @@ function Composer({
 
   return (
     <div className="comment-composer">
+      {/* The popup is anchored to this wrapper, not the whole composer, so it
+          opens directly under the textarea whatever height it's resized to. */}
+      <div className="comment-composer-field">
       <textarea
         ref={ref}
         value={text}
@@ -167,6 +170,7 @@ function Composer({
           ))}
         </ul>
       )}
+      </div>
 
       <div className="comment-composer-foot">
         <span className="comment-hint">
@@ -195,8 +199,11 @@ export default function CommentSection({
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // Everyone in the thread can be tagged, not just those the server knew about
-  // when the page rendered.
+  // when the page rendered. Without migration 0007 the mentions column doesn't
+  // exist, so tagging would silently post plain text and notify nobody — don't
+  // offer it at all in that case.
   const taggable = useMemo(() => {
+    if (!threadsEnabled) return [];
     const byId = new Map(mentionable.map(m => [m.id, m]));
     for (const c of comments) {
       if (c.user_id && c.user?.name && !byId.has(c.user_id)) {
@@ -209,7 +216,7 @@ export default function CommentSection({
     }
     byId.delete(currentUserId ?? '');
     return [...byId.values()];
-  }, [mentionable, comments, currentUserId]);
+  }, [threadsEnabled, mentionable, comments, currentUserId]);
 
   const roots = comments.filter(c => !c.parent_id);
   const repliesOf = (id: number) =>

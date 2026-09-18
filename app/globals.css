@@ -2324,6 +2324,7 @@ a.comment-author:hover { color: var(--emerald); }
 .comment-reply-box { margin-top: 12px; }
 
 .comment-composer { position: relative; }
+.comment-composer-field { position: relative; display: block; }
 .comment-composer textarea {
   width: 100%; min-height: 72px;
   padding: 10px 14px;
@@ -2348,7 +2349,7 @@ a.comment-author:hover { color: var(--emerald); }
 /* @mention autocomplete — anchored under the textarea it belongs to. */
 .mention-pop {
   position: absolute; z-index: 20;
-  left: 8px; top: calc(100% - 34px);
+  left: 8px; top: calc(100% - 2px);
   margin: 0; padding: 4px;
   list-style: none;
   min-width: 200px; max-width: 280px;
