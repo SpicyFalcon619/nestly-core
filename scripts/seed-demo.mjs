@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import { ensureDemoAccounts, reownDemoRows } from './demo-accounts.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const env = readFileSync(join(root, '.env.local'), 'utf8');
@@ -162,6 +163,30 @@ const LISTINGS = [
       rooftop_access: true, parking: true, power_backup: true, lift_access: true,
     },
   },
+  {
+    title: 'Seat free in a three-seat room, Sayed Nagar',
+    zone: 'Sayed Nagar',
+    address: 'House 27, Lane 4, Sayed Nagar, Dhaka 1212',
+    lat: 23.7950, lng: 90.4440,
+    listing_type: 'peer_listing', property_type: 'shared_room',
+    gender_pref: 'male', total_rooms: 3, current_occupancy: 2,
+    status: 'available', is_verified: false,
+    description:
+      'One seat opened up in the room I share with two other students. Ten minutes on foot to campus, ' +
+      'and the bazar is at the end of the lane.\n\n' +
+      'We cook together most nights and split the bill at the end of the month. Quiet during exam weeks, ' +
+      'not so quiet otherwise — worth knowing before you move in.',
+    photos: photo('nestly-sayednagar', 3),
+    costs: {
+      base_rent: 4800, electricity_amount: 600, electricity_type: 'shared',
+      gas_bill: 350, water_bill: 250, internet_cost: 500,
+      maintenance_fee: 300, caretaker_fee: 200, other_fees: 0,
+    },
+    amenities: {
+      attached_bathroom: false, attached_kitchen: true, is_furnished: true,
+      rooftop_access: true, parking: false, power_backup: false, lift_access: false,
+    },
+  },
 ];
 
 const TITLES = LISTINGS.map(l => l.title);
@@ -262,20 +287,25 @@ async function cleanItems() {
 }
 
 async function seed() {
-  const { data: landlord } = await db
-    .from('profiles').select('id, name').eq('role', 'landlord').limit(1).maybeSingle();
+  // Demo content belongs to demo accounts, never to whoever happens to be the
+  // first landlord in the table.
+  const accounts = await ensureDemoAccounts(db);
+  const landlord = accounts.landlord;
   if (!landlord) {
-    console.error('No landlord profile found — register one first, demo listings need an owner.');
+    console.error('Could not create or find the demo landlord account.');
     process.exit(1);
   }
 
-  // A peer listing is a student offering a spare room, so its owner must be a
-  // student — that's also the only case where flatmate compatibility can be
-  // scored, so prefer a student who has filled in their preferences.
-  const { data: students } = await db.from('profiles').select('id, name').eq('role', 'student');
-  const { data: prefRows } = await db.from('user_preferences').select('user_id');
-  const withPrefs = new Set((prefRows || []).map(r => r.user_id));
-  const peerOwner = students?.find(s => withPrefs.has(s.id)) || students?.[0] || landlord;
+  // A peer listing is a student offering a spare room. They alternate between
+  // the two demo students so that, whichever one you log in as, at least one
+  // peer listing belongs to someone else — flatmate compatibility never scores
+  // your own listing, so a single student owner makes it look broken.
+  const peerOwners = [accounts.student, accounts.student2].filter(Boolean);
+  let peerTurn = 0;
+  const ownerFor = (listing) =>
+    listing.listing_type === 'peer_listing' && peerOwners.length
+      ? peerOwners[peerTurn++ % peerOwners.length]
+      : landlord;
 
   const { data: zones } = await db.from('zones').select('zone_id, zone_name');
   const zoneId = (name) => zones?.find(z => z.zone_name === name)?.zone_id ?? zones?.[0]?.zone_id;
@@ -291,7 +321,7 @@ async function seed() {
     const { zone, costs, amenities, ...listing } = l;
     const { data: inserted, error } = await db.from('listings').insert({
       ...listing,
-      user_id: l.listing_type === 'peer_listing' ? peerOwner.id : landlord.id,
+      user_id: ownerFor(l).id,
       zone_id: zoneId(zone),
     }).select('listing_id').single();
 
@@ -311,7 +341,12 @@ async function seed() {
     console.log(`insert #${inserted.listing_id}  ${l.title.slice(0, 50)}…  (৳${total.toLocaleString('en-BD')}/mo)`);
   }
   console.log(`\nOwners: ${landlord.name} (landlord listings), ${peerOwner.name} (peer listings).`);
-  await seedItems(peerOwner, zoneId);
+  // Rows from an earlier run still belong to whoever owned them then.
+  peerTurn = 0;
+  for (const l of LISTINGS) await reownDemoRows(db, 'listings', 'user_id', [l.title], ownerFor(l).id);
+
+  await seedItems(accounts.student2 || accounts.student, zoneId);
+  await reownDemoRows(db, 'items', 'seller_id', ITEM_TITLES, (accounts.student2 || accounts.student).id);
   console.log('Remove with: node scripts/seed-demo.mjs --clean');
 }
 
