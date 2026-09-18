@@ -3,9 +3,15 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { createUserNotification } from './notifications';
+import { commentThreadsAvailable, type CommentMention } from '@/lib/comments';
 import { revalidatePath } from 'next/cache';
 
-export async function addComment(itemId: number, content: string, type: 'item' | 'listing' = 'item') {
+export async function addComment(
+  itemId: number,
+  content: string,
+  type: 'item' | 'listing' = 'item',
+  options: { parentId?: number | null; mentions?: CommentMention[] } = {},
+) {
   if (!content.trim()) return { error: 'Comment cannot be empty.' };
 
   const supabase = await createClient();
@@ -14,10 +20,57 @@ export async function addComment(itemId: number, content: string, type: 'item' |
 
   const table = type === 'item' ? 'item_comments' : 'listing_comments';
   const idCol  = type === 'item' ? 'item_id'     : 'listing_id';
+  const link   = type === 'item' ? `/exchange/${itemId}` : `/listings/${itemId}`;
+
+  // Replies and mentions need migration 0007; without it the comment is still
+  // posted, just flat.
+  const threads = await commentThreadsAvailable(supabase, table);
+
+  // Two levels only: replying to a reply attaches to the same root, so threads
+  // can't keep indenting. The parent must belong to this listing/item.
+  let parentId: number | null = null;
+  let parentAuthorId: string | null = null;
+  if (threads && options.parentId) {
+    const { data: parent } = await supabase
+      .from(table)
+      .select(`comment_id, user_id, parent_id, ${idCol}`)
+      .eq('comment_id', options.parentId)
+      .maybeSingle();
+    if (parent && Number((parent as Record<string, unknown>)[idCol]) === Number(itemId)) {
+      parentId = (parent.parent_id as number | null) ?? (parent.comment_id as number);
+      parentAuthorId = parent.user_id as string;
+    }
+  }
+
+  // Never trust the mention list the client sends: resolve the ids against
+  // profiles and rebuild each row from what the database says.
+  let mentions: CommentMention[] = [];
+  if (threads && options.mentions?.length) {
+    const ids = [...new Set(options.mentions.map(m => m.id))].slice(0, 10);
+    const { data: people } = await supabase
+      .from('profiles')
+      .select('id, name, profile_slug, is_public')
+      .in('id', ids);
+    mentions = (people || []).map(person => ({
+      id: person.id,
+      name: person.name,
+      slug: person.is_public === false ? null : person.profile_slug,
+    }));
+  }
+
+  const row: Record<string, unknown> = {
+    [idCol]: itemId,
+    user_id: user.id,
+    content: content.trim(),
+  };
+  if (threads) {
+    row.parent_id = parentId;
+    row.mentions = mentions.length ? mentions : null;
+  }
 
   const { data: inserted, error } = await supabase
     .from(table)
-    .insert({ [idCol]: itemId, user_id: user.id, content: content.trim() })
+    .insert(row)
     .select('*')
     .single();
 
@@ -26,38 +79,43 @@ export async function addComment(itemId: number, content: string, type: 'item' |
   // Attach profile separately (avoids FK name guessing across different comment tables)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, profile_pic')
+    .select('name, profile_pic, profile_slug, is_public')
     .eq('id', user.id)
     .single();
 
-  // Notify the owner/seller
-  const { data: commenter } = await supabase.from('profiles').select('name').eq('id', user.id).single();
-  const commenterName = commenter?.name || 'Someone';
+  const commenterName = profile?.name || 'Someone';
+
+  // One notification per person, at most: a reply that also mentions the same
+  // person, on their own listing, shouldn't arrive three times.
+  const notified = new Set<string>([user.id]);
+  const notify = async (recipient: string | null | undefined, notifType: string, message: string) => {
+    if (!recipient || notified.has(recipient)) return;
+    notified.add(recipient);
+    await createUserNotification(recipient, notifType, message, link);
+  };
+
+  await notify(parentAuthorId, 'comment_reply', `${commenterName} replied to your comment`);
+  for (const m of mentions) {
+    await notify(m.id, 'comment_mention', `${commenterName} mentioned you in a comment`);
+  }
 
   if (type === 'listing') {
     const { data: listing } = await supabase.from('listings').select('user_id, title').eq('listing_id', itemId).single();
-    if (listing && listing.user_id !== user.id) {
-      await createUserNotification(
-        listing.user_id,
-        'new_comment',
-        `${commenterName} commented on your listing "${listing.title}"`,
-        `/listings/${itemId}`
-      );
+    if (listing) {
+      await notify(listing.user_id, 'new_comment', `${commenterName} commented on your listing "${listing.title}"`);
     }
   } else {
     const { data: item } = await supabase.from('items').select('seller_id, title').eq('item_id', itemId).single();
-    if (item && item.seller_id !== user.id) {
-      await createUserNotification(
-        item.seller_id,
-        'new_comment',
-        `${commenterName} commented on your item "${item.title}"`,
-        `/exchange/${itemId}`
-      );
+    if (item) {
+      await notify(item.seller_id, 'new_comment', `${commenterName} commented on your item "${item.title}"`);
     }
   }
 
-  revalidatePath(type === 'item' ? `/exchange/${itemId}` : `/listings/${itemId}`);
-  return { success: true, comment: { ...inserted, user: profile || { name: 'You', profile_pic: null } } };
+  revalidatePath(link);
+  return {
+    success: true,
+    comment: { ...inserted, user: profile || { name: 'You', profile_pic: null } },
+  };
 }
 
 export async function voteComment(commentId: number, voteType: 1 | -1, itemId: number, type: 'item' | 'listing' = 'item') {
