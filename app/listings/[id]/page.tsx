@@ -244,8 +244,12 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <span className={`badge ${statusColor(listing.status)}`}>{statusLabel(listing.status)}</span>
               {listing.is_verified && <span className="badge badge-gold"><ShieldCheck size={14}/> Verified</span>}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-              <div>
+            {/* flexWrap so Share/Save drop under a long title on narrow
+                screens instead of pushing the row past the viewport — the
+                title's own text wraps fine, the button pair with
+                flexShrink:0 was the part that couldn't give up any width. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+              <div style={{ minWidth: 0 }}>
                 <h1 style={{ fontSize: '32px', marginBottom: '8px' }}>{listing.title}</h1>
                 <p style={{ color: 'var(--ink-muted)' }}>{listing.address}</p>
               </div>

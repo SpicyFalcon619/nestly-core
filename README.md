@@ -87,6 +87,25 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
    purpose: compatibility never scores your own listing, so with a single
    student the student-posted rooms would show no score.
 
+## Exporting static HTML (for Figma / prototyping)
+
+`npm run export:figma` drives a headless browser through every screen, in
+every role (logged out, student, landlord, admin), and writes a self-contained
+HTML file per screen to `./figma-export` — CSS inlined, no scripts, all images
+either remote or embedded as data URIs. Meant for import into Figma via the
+html.to.design plugin, so a prototype can be wired up without hand-rebuilding
+the design.
+
+```bash
+npm i -D playwright && npx playwright install chromium   # first time only
+npm run dev                                               # in one terminal
+npm run export:figma                                      # in another
+```
+
+Uses the demo accounts (see above) to reach logged-in screens — run
+`node scripts/seed-demo.mjs` first if they don't exist. See
+`figma-export/README.md` (written by the export) for the full screen index.
+
 ## Project structure
 
 ```

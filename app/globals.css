@@ -339,7 +339,6 @@ img { display: block; max-width: 100%; }
 .nav-links > a.mobile-nav-extra { display: none; }
 .nav-links > a .nav-icon { display: none; }
 .nav-links > a:hover:not(.mobile-nav-extra)  { color: var(--emerald); background: var(--emerald-soft); }
-.nav-indicator { display: none; }
 .nav-links > a.active { color: var(--emerald); background: var(--emerald-soft); font-weight: 600; }
 
 .nav-right { display: flex; gap: 10px; align-items: center; margin-left: auto; }
@@ -1106,6 +1105,15 @@ input[type="range"]:focus-visible { outline: 2px solid var(--emerald); outline-o
     white-space: nowrap;
     border: 1px solid var(--border);
   }
+  /* `flex: 1` only constrains the MAIN axis, which is vertical once
+     .dashboard-layout switches to a column — it does nothing for width. Without
+     an explicit width here, a wide table inside (e.g. My Properties) stretches
+     .dashboard-main itself instead of scrolling inside its own
+     .table-responsive wrapper, and the whole page gains a horizontal scrollbar. */
+  .dashboard-main {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* ════════════════════════════════════════
@@ -1507,6 +1515,15 @@ footer a:hover { color: #fff; text-decoration: underline; }
 }
 
 @media (max-width: 900px) {
+  /* The pill nav below is `position: fixed`, so it floats permanently over
+     whatever's at the bottom of the page — nothing reserved space for it,
+     which is why a button or the footer's last line could sit hidden
+     underneath it. ~61px measured height, flush (bottom:0) once scrolled;
+     padding-bottom on body (last flex child) leaves clearance under
+     whatever the page ends with (footer, or a page with no footer at all)
+     without touching any individual page's own layout. */
+  body { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
   /* Mobile nav */
   .mobile-menu-btn { display: none !important; }
   .nav-links {
@@ -1524,16 +1541,6 @@ footer a:hover { color: #fff; text-decoration: underline; }
                 padding 0.3s ease, transform 0.3s ease;
   }
   
-  .nav-indicator {
-    display: block;
-    position: absolute;
-    top: 8px; height: calc(100% - 16px);
-    background: var(--emerald);
-    border-radius: 30px;
-    z-index: 1;
-    pointer-events: none;
-  }
-
   .nav-links.nav-scrolled {
     bottom: 0; left: 0; right: 0;
     border-radius: 24px 24px 0 0;
@@ -1541,10 +1548,6 @@ footer a:hover { color: #fff; text-decoration: underline; }
     padding: 10px 8px calc(env(safe-area-inset-bottom) + 12px) 8px;
     box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
   }
-  .nav-links.nav-scrolled .nav-indicator {
-    top: 10px; height: calc(100% - 10px - calc(env(safe-area-inset-bottom) + 12px));
-  }
-
   .nav-links > a, .mobile-nav-extra {
     display: flex !important; flex-direction: row !important; gap: 6px; padding: 8px 10px;
     border-radius: 30px;
@@ -1564,7 +1567,15 @@ footer a:hover { color: #fff; text-decoration: underline; }
     transition: max-width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
   }
   
+  /* This used to rely on a separate ".nav-indicator" element sliding behind
+     whichever tab was active — but nothing in the Navbar component ever
+     rendered that element, so the active tab (icon + text set to white right
+     below) had no backdrop at all and effectively disappeared against the
+     light glass nav. Giving the active tab its own background directly, the
+     same way every other "selected" state in this app works, fixes that
+     without needing a second element or any JS to position one. */
   .nav-links > a.active, .mobile-nav-extra.active {
+    background: var(--emerald) !important;
     color: white !important;
     flex: 0 0 auto;
   }
@@ -1663,7 +1674,11 @@ footer a:hover { color: #fff; text-decoration: underline; }
     box-shadow: var(--shadow-sm);
     margin-bottom: 16px;
   }
-  .detail-layout { grid-template-columns: 1fr; }
+  /* Plain `1fr` still carries an implicit `min-width: auto` floor — a grid
+     track won't shrink below its content's min-content size unless told to,
+     the grid equivalent of the flex min-width bug on .dashboard-main above.
+     minmax(0, 1fr) removes that floor. */
+  .detail-layout { grid-template-columns: minmax(0, 1fr); }
   .features, .steps, .grid-3 { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   .features, .steps, .grid-3 { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   .grid-4, .grid-2 { grid-template-columns: 1fr; }

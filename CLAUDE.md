@@ -552,3 +552,27 @@ Ahmad pushes directly to `main` from VS Code's Source Control panel —
 default to that here rather than feature branches unless asked; a
 branch-first habit carried over from another project broke his usual
 flow the first time.
+
+## Static HTML export for Figma (2026-09-18)
+
+`scripts/export-static-html.mjs` (`npm run export:figma`) drives a headless
+Playwright browser through 32 real screens — all four public pages plus
+every dashboard tab for student/landlord/admin, using the demo accounts —
+and serializes each one into a standalone HTML file: CSS inlined, `<script>`
+tags stripped, every image resolved to a remote URL or a data URI (this
+matters because `next/image` rewrites `src` to `/_next/image?url=…`, which
+only the dev server can answer — the export unwraps that back to the
+original). Output goes to `./figma-export` (gitignored, ~5MB, regenerate
+don't commit), meant for the html.to.design Figma plugin.
+
+Verified by opening the exported files directly (`file://`, no server) and
+screenshotting them — browse listings, the create-listing modal (open, with
+a live-looking Leaflet map), and the student dashboard in dark mode all
+render pixel-identical to the real app. The `open` hook on a screen entry
+(see `landlord-create-listing-modal`) is how a screen reaches a state a URL
+alone can't — it waits for `.modal-bg` after navigating to `?new=1`.
+
+Needs `playwright` (added as a devDependency, run
+`npx playwright install chromium` once) and the dev server running
+separately — it is a Playwright *client*, not a test runner, so it doesn't
+manage the server's lifecycle itself.

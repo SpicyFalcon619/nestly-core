@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# generated Figma/html.to.design export (npm run export:figma) — regenerate,
+# don't commit; the HTML embeds data-URI images and can run several MB
+/figma-export
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

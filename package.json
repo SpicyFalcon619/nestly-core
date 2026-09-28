@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "export:figma": "node scripts/export-static-html.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -25,6 +26,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "playwright": "^1.48.0"
   }
 }
