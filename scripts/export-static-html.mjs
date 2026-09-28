@@ -120,40 +120,20 @@ const SCREENS = [
   // screen had a visible "Bills" link to wire a click from. This one opens
   // that dropdown so the link actually exists on a captured screen.
   {
-    role: 'landlord', name: 'landlord-account-menu', path: '/dashboard',
     // Two different menus, not one that just relocates: below 900px the
     // navbar swaps the avatar dropdown for a bottom-sheet opened from the
     // account icon in the floating pill nav — different trigger, different
-    // panel. The desktop-only #avatarBtn timing out on the mobile pass is
-    // exactly what caught this the first time.
-    open: async (page) => {
-      const wide = page.viewportSize().width >= 900;
-      if (wide) {
-        await page.click('#avatarBtn');
-        await page.waitForSelector('#avatarMenu', { timeout: 10000 });
-      } else {
-        await page.click('.mobile-account-btn');
-        await page.waitForSelector('#mobileAccountSheet', { timeout: 10000 });
-      }
-    },
+    // panel. openAccountMenu() (below) picks the right one per viewport.
+    role: 'landlord', name: 'landlord-account-menu', path: '/dashboard',
+    open: openAccountMenu,
   },
 
-  // Same idea as landlord-account-menu, for the student side — the mobile
-  // bottom nav's account icon opens this same sheet, and without a captured
-  // screen for it, "Watchlist" and "Bills" have no real source to wire from
-  // in the student flow either.
+  // Same idea, for the student side — the mobile bottom nav's account icon
+  // opens this same sheet, and without a captured screen for it, "Watchlist"
+  // and "Bills" have no real source to wire from in the student flow either.
   {
     role: 'student', name: 'student-account-menu', path: '/dashboard',
-    open: async (page) => {
-      const wide = page.viewportSize().width >= 900;
-      if (wide) {
-        await page.click('#avatarBtn');
-        await page.waitForSelector('#avatarMenu', { timeout: 10000 });
-      } else {
-        await page.click('.mobile-account-btn');
-        await page.waitForSelector('#mobileAccountSheet', { timeout: 10000 });
-      }
-    },
+    open: openAccountMenu,
   },
 ];
 
@@ -191,6 +171,25 @@ const FREEZE_CSS = `
   caret-color: transparent !important;
 }
 `;
+
+/**
+ * Opens the avatar dropdown (desktop) or the account bottom-sheet (mobile) —
+ * shared by landlord-account-menu and student-account-menu. Retries the
+ * click a few times: on a cold dev server the very first visit to a route
+ * can still be compiling when the earlier fixed wait elapses, so the button
+ * exists and looks clickable but the sheet doesn't open on the first try —
+ * caught empirically (worked reliably at a 3s wait, was flaky at 1.8s).
+ */
+async function openAccountMenu(page) {
+  const wide = page.viewportSize().width >= 900;
+  const [trigger, panel] = wide ? ['#avatarBtn', '#avatarMenu'] : ['.mobile-account-btn', '#mobileAccountSheet'];
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await page.click(trigger);
+    const opened = await page.waitForSelector(panel, { timeout: 4000 }).then(() => true).catch(() => false);
+    if (opened) return;
+  }
+  throw new Error(`Account menu (${panel}) did not open after 3 attempts.`);
+}
 
 /**
  * The `.catch(() => {})` here used to swallow a failed login outright — the
