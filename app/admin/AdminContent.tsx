@@ -223,7 +223,7 @@ export default function AdminContent({
         <div className="card" id="tab-verifications">
           <h2 style={{ marginTop: 0, color: 'var(--navy)' }}>Identity Verifications</h2>
           {verifications.length === 0 ? (
-            <p className="text-gray text-center" style={{ padding: '24px 0' }}>No verifications found.</p>
+            <p className="text-gray text-center" style={{ padding: '24px 0' }}>No verifications yet.</p>
           ) : (
             <div className="table-responsive">
               <table className="table">
@@ -275,7 +275,7 @@ export default function AdminContent({
         <div className="card" id="tab-complaints">
           <h2 style={{ marginTop: 0, color: 'var(--navy)' }}>Complaints & Reports</h2>
           {complaints.length === 0 ? (
-            <p className="text-gray text-center" style={{ padding: '24px 0' }}>No complaints found.</p>
+            <p className="text-gray text-center" style={{ padding: '24px 0' }}>No complaints yet.</p>
           ) : (
             <div className="table-responsive">
               <table className="table">
@@ -292,7 +292,11 @@ export default function AdminContent({
                       <td style={{ maxWidth: '250px' }}>{c.description}</td>
                       <td><span dangerouslySetInnerHTML={{ __html: statusBadge(c.status) }} /></td>
                       <td>
-                        {(c.status === 'pending' || c.status === 'open') ? (
+                        {/* Same enum mismatch as the Overview stat: real values are
+                            'submitted' / 'under_review' / 'resolved', never 'pending' or
+                            'open' — this always fell through to "Processed", so Resolve
+                            and Dismiss never rendered for a genuinely open complaint. */}
+                        {(c.status === 'submitted' || c.status === 'under_review') ? (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                             <button className="btn btn-success btn-sm" onClick={() => handleComplaintAction(c.complaint_id, 'resolved')}>Resolve</button>
                             <button className="btn btn-danger btn-sm" onClick={() => handleComplaintAction(c.complaint_id, 'dismissed')}>Dismiss</button>

@@ -60,7 +60,9 @@ export default async function AdminPage() {
   // Fetch Stats Data
   const { count: totalListings } = await supabase.from('listings').select('*', { count: 'exact', head: true });
   const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-  const openComplaints = complaints.filter(c => c.status === 'open' || c.status === 'pending').length;
+  // complaint_status is really ('submitted', 'under_review', 'resolved') —
+  // 'open'/'pending' never match, so this always read 0 regardless of data.
+  const openComplaints = complaints.filter(c => c.status === 'submitted' || c.status === 'under_review').length;
 
   const { data: listings } = await supabase.from('listings').select('zone_id, costs:utility_costs(base_rent)');
   const { data: seekingPosts } = await supabase.from('seeking_posts').select('zone_id');

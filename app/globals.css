@@ -1681,7 +1681,10 @@ footer a:hover { color: #fff; text-decoration: underline; }
   .detail-layout { grid-template-columns: minmax(0, 1fr); }
   .features, .steps, .grid-3 { grid-template-columns: repeat(2, 1fr); gap: 20px; }
   .features, .steps, .grid-3 { grid-template-columns: repeat(2, 1fr); gap: 20px; }
-  .grid-4, .grid-2 { grid-template-columns: 1fr; }
+  /* Same bare-1fr floor as .detail-layout above — .grid-2 alone is used in
+     35 places (exchange detail's photo/details split among them), so this
+     one line was the actual cause of the exchange-item mobile overflow. */
+  .grid-4, .grid-2 { grid-template-columns: minmax(0, 1fr); }
 
   /* Hero */
   .hero { padding: 80px 5%; }
@@ -2264,7 +2267,9 @@ html.is-landlord .seeking-nav-link {
 /* ════════════════════════════════════════
    COMMENT VOTES
    ════════════════════════════════════════ */
-.vote-row { display: flex; align-items: center; gap: 8px; }
+/* wrap: up to 4 buttons (vote, vote, reply, delete) don't fit in one row at
+   390px — same fix as the listing-detail Share/Save row earlier. */
+.vote-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .vote-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 5px 11px;

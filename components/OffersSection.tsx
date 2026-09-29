@@ -97,6 +97,11 @@ export default function OffersSection({ offers: initialOffers, isOwner, itemId }
                   display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 18px',
                   borderRadius: '10px', border: `1px solid ${statusColors[o.status] || 'var(--border)'}22`,
                   background: o.status === 'accepted' ? '#f0fdf4' : 'var(--surface-1)',
+                  // Avatar, price, status badge and the action buttons are all
+                  // flexShrink:0 — at 390px there isn't room for all of them plus
+                  // the buyer's name on one line, so this overflowed the page
+                  // instead of wrapping.
+                  flexWrap: 'wrap',
                 }}
               >
                 {/* Avatar */}
@@ -110,7 +115,7 @@ export default function OffersSection({ offers: initialOffers, isOwner, itemId }
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: '14px' }}>{o.buyer?.name || 'Buyer'}</div>
                   {o.message && <div style={{ fontSize: '12px', color: 'var(--ink-muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>"{o.message}"</div>}
-                  <div style={{ fontSize: '12px', color: 'var(--ink-muted)', marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString()}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--ink-muted)', marginTop: 2 }}>{new Date(o.created_at).toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka' })}</div>
                 </div>
 
                 {/* Prices */}

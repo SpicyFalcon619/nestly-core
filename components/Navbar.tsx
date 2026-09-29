@@ -119,7 +119,7 @@ export default function Navbar() {
   const navLinks = [
     { href: '/', label: 'Home', icon: <Home size={18} className="nav-icon" /> },
     { href: '/listings', label: 'Listings', icon: <Building2 size={18} className="nav-icon" /> },
-    { href: '/exchange', label: 'Market', icon: <ShoppingBag size={18} className="nav-icon" /> },
+    { href: '/exchange', label: 'Exchange', icon: <ShoppingBag size={18} className="nav-icon" /> },
     ...(currentRole !== 'landlord' ? [{ href: '/seeking', label: 'Seeking', icon: <Search size={18} className="nav-icon" /> }] : []),
   ];
 

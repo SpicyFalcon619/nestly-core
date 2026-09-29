@@ -23,10 +23,22 @@ export function fmtMonthYear(dateStr: string): string {
   }
 }
 
+// One shared badge for every status column in the app (applications, offers,
+// listings, items, seeking posts, verifications, complaints) — which is
+// exactly why it kept going blank: each new caller added its own enum's
+// values here piecemeal, but this only ever covered the first two or three
+// callers. Every value below is copied straight from the real Postgres enum
+// in supabase/migrations/0000_initial_schema.sql, not guessed, so a blank
+// badge here now means a genuinely new status, not a missed case.
 export function statusBadge(s: string): string {
-  if (s === 'pending') return '<span class="badge badge-amber">Pending</span>';
-  if (s === 'accepted' || s === 'fulfilled') return '<span class="badge badge-success">Accepted</span>';
+  if (s === 'pending' || s === 'submitted' || s === 'active') return '<span class="badge badge-amber">Pending</span>';
+  if (s === 'under_review') return '<span class="badge badge-amber">Under Review</span>';
+  if (s === 'accepted' || s === 'fulfilled' || s === 'approved' || s === 'available' || s === 'resolved') {
+    return `<span class="badge badge-success">${s === 'available' ? 'Available' : s === 'resolved' ? 'Resolved' : s === 'approved' ? 'Approved' : 'Accepted'}</span>`;
+  }
   if (s === 'rejected') return '<span class="badge badge-danger">Rejected</span>';
+  if (s === 'occupied' || s === 'sold') return `<span class="badge badge-danger">${s === 'sold' ? 'Sold' : 'Occupied'}</span>`;
+  if (s === 'soon_vacant') return '<span class="badge badge-amber">Soon Vacant</span>';
   if (s === 'countered') return '<span class="badge badge-amber">Countered</span>';
   if (s === 'withdrawn') return '<span class="badge badge-gray">Withdrawn</span>';
   return '';

@@ -85,7 +85,7 @@ const SCREENS = [
   { role: 'student', name: 'student-profile-preferences', path: '/profile' },
   { role: 'student', name: 'student-notifications', path: '/notifications' },
   { role: 'student', name: 'student-messages', path: '/messages' },
-  { role: 'student', name: 'student-public-profile', path: '/profiles/student-test-2-80b0' },
+  { role: 'student', name: 'student-public-profile', path: '/profiles/student-test-80b0' },
 
   // ── Landlord ──
   { role: 'landlord', name: 'landlord-dashboard-listings', path: '/dashboard' },

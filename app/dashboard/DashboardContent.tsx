@@ -298,7 +298,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
           {activeTab === 'listings' && (
             <div className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ margin: 0, color: 'var(--navy)' }}>My Properties</h3>
+                <h3 style={{ margin: 0, color: 'var(--navy)' }}>My Listings</h3>
                 <Link href="/listings?new=1" className="btn btn-primary btn-sm">+ New Listing</Link>
               </div>
               {myListings.length === 0 ? (
@@ -504,7 +504,10 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                       {savedSearches.map(s => (
                         <div key={s.id} className="saved-search-row">
                           <Link href={`/listings?${s.query}`} className="saved-search-label">{s.label}</Link>
-                          <span className="saved-search-date">Saved {new Date(s.created_at).toLocaleDateString()}</span>
+                          {/* No locale/timeZone -> server and browser can render different
+                              text for the same instant -> hydration error #418 in production
+                              (invisible in dev, which only warns). Pinned everywhere below. */}
+                          <span className="saved-search-date">Saved {new Date(s.created_at).toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka' })}</span>
                           <button
                             type="button"
                             className="btn btn-outline btn-sm"
@@ -710,7 +713,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                             <td><Link href={`/listings/${a.listing_id}`} style={{ fontWeight: 600, color: 'inherit', textDecoration: 'none' }}>{a.listing_title}</Link></td>
                             <td>{a.owner_name || '—'}</td>
                             <td>{statusBadgeEl(a.status)}</td>
-                            <td style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>{a.created_at ? new Date(a.created_at).toLocaleDateString() : ''}</td>
+                            <td style={{ fontSize: '13px', color: 'var(--ink-muted)' }}>{a.created_at ? new Date(a.created_at).toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka' }) : ''}</td>
                             <td>
                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                                 {a.owner_id && (
@@ -776,7 +779,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                           </div>
                           {a.detail && <div className="activity-detail">{a.detail}</div>}
                         </div>
-                        <span className="activity-time">{new Date(a.at).toLocaleDateString()}</span>
+                        <span className="activity-time">{new Date(a.at).toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka' })}</span>
                       </div>
                     );
                   })}
@@ -814,7 +817,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: n.is_read ? 'transparent' : 'var(--primary)', flexShrink: 0, marginTop: 6 }} />
                       <div style={{ flex: 1 }}>
                         <p style={{ margin: 0, fontSize: '14px', fontWeight: n.is_read ? 400 : 600 }}>{n.message}</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--ink-muted)' }}>{n.created_at ? new Date(n.created_at).toLocaleString() : ''}</p>
+                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--ink-muted)' }}>{n.created_at ? new Date(n.created_at).toLocaleString('en-US', { timeZone: 'Asia/Dhaka', dateStyle: 'medium', timeStyle: 'short' }) : ''}</p>
                       </div>
                     </div>
                   ))}

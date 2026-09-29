@@ -16,7 +16,15 @@ export const DEMO_ACCOUNTS = [
     key: 'student',
     email: 'student@test.com',
     password: '1234Student',
-    name: 'Student Test 2',
+    // "Student Test" (no suffix) already belongs to an old pre-existing
+    // dev account (ahossain2420505@...) that predates this seed script —
+    // this one was named "Student Test 2" originally to avoid colliding
+    // with it in conversation. For the demo video "Test 2" reads as
+    // leftover test data on camera, so this account is now just "Student
+    // Test" too — a duplicate display name across two unrelated accounts
+    // is harmless (not a unique key), and this is the account the video
+    // actually logs into.
+    name: 'Student Test',
     role: 'student',
     gender: 'male',
     phone: '+8801711000101',

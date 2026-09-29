@@ -50,7 +50,7 @@ export default function ExchangeItemCard({ item, isLoggedIn }: { item: Item; isL
           {isLoggedIn && (
             <Link className="btn btn-outline btn-sm" href={`/exchange/${item.item_id}`}>Make Offer</Link>
           )}
-          <Link className="btn btn-primary btn-sm" href={`/exchange/${item.item_id}`}>View</Link>
+          <Link className="btn btn-primary btn-sm" href={`/exchange/${item.item_id}`}>View Details</Link>
         </div>
       </div>
     </div>

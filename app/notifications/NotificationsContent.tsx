@@ -72,7 +72,17 @@ export default function NotificationsContent({
                   {notif.message}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: 'var(--gray)' }}>
-                  <span>{new Date(notif.created_at).toLocaleString()}</span>
+                  {/* No locale/timeZone here used to mean "whatever the runtime's
+                      default is" — the server (wherever it's hosted) and the
+                      visitor's own browser almost never agree, so the server-
+                      rendered string and the client's hydration pass produced
+                      different text and React threw a hydration mismatch
+                      (error #418) — invisible in dev (which shows the full
+                      warning instead of failing), but a real, visible crash
+                      in the production build. Pinning both makes every
+                      render — server or client, wherever either runs —
+                      compute the exact same string. */}
+                  <span>{new Date(notif.created_at).toLocaleString('en-US', { timeZone: 'Asia/Dhaka', dateStyle: 'medium', timeStyle: 'short' })}</span>
                   {notif.link && (
                     <Link href={notif.link} style={{ color: 'var(--primary)', fontWeight: 600 }}>
                       View Details →

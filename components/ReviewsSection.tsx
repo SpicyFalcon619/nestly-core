@@ -173,7 +173,7 @@ export default function ReviewsSection({
             <div key={review.review_id} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <div style={{ fontWeight: 600 }}>{(review as any).reviewer_name || review.reviewer_name || 'Anonymous'}</div>
-                <div style={{ fontSize: '13px', color: 'var(--gray)' }}>{new Date(review.created_at).toLocaleDateString()}</div>
+                <div style={{ fontSize: '13px', color: 'var(--gray)' }}>{new Date(review.created_at).toLocaleDateString('en-US', { timeZone: 'Asia/Dhaka' })}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 {renderStars(review.composite_score)}

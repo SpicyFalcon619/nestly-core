@@ -10,7 +10,7 @@ export default function Footer() {
         <span style={{ color: 'rgba(255,255,255,0.5)' }}>·</span>
         <Link href="/exchange" style={{ color: '#fff', textDecoration: 'none' }}>Exchange</Link>
         <span style={{ color: 'rgba(255,255,255,0.5)' }}>·</span>
-        <Link href="/seeking" style={{ color: '#fff', textDecoration: 'none' }}>Looking For</Link>
+        <Link href="/seeking" style={{ color: '#fff', textDecoration: 'none' }}>Seeking</Link>
       </div>
       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>
         {`© ${new Date().getFullYear()} Nestly — Student housing & marketplace, Dhaka`}
