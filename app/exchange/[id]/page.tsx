@@ -15,80 +15,78 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
   const { id } = await params;
   const supabase = await createClient();
 
-  // Fetch the item with joined tables
-  const { data: item } = await supabase
-    .from('items')
-    .select(`
-      *,
-      seller:profiles!items_seller_id_fkey(name, email, phone, university_id, created_at, profile_pic, profile_slug),
-      zone:zones(zone_name),
-      listing:listings(title, listing_id)
-    `)
-    .eq('item_id', parseInt(id))
-    .eq('item_id', parseInt(id))
-    .single();
+  // Same waterfall problem as the listing detail page (see the comment
+  // there): these used to run one at a time. Stage 0 has no dependency on
+  // anything else here; stage 1 needs `item`/`user`, both resolved by then.
+  const [
+    { data: item },
+    commentsData,
+    { data: offersData },
+    { data: { user } },
+    threadsEnabled,
+  ] = await Promise.all([
+    supabase
+      .from('items')
+      .select(`
+        *,
+        seller:profiles!items_seller_id_fkey(name, email, phone, university_id, created_at, profile_pic, profile_slug),
+        zone:zones(zone_name),
+        listing:listings(title, listing_id)
+      `)
+      .eq('item_id', parseInt(id))
+      .single(),
+    fetchCommentsWithAuthors(supabase, 'item_comments', 'item_id', parseInt(id)),
+    // Fetch offers — owner sees all, buyer sees their own, others see accepted + pending counts only
+    supabase
+      .from('offers')
+      .select('*, buyer:profiles!offers_buyer_id_fkey(name, profile_pic)')
+      .eq('item_id', parseInt(id))
+      .order('created_at', { ascending: false }),
+    supabase.auth.getUser(),
+    commentThreadsAvailable(supabase, 'item_comments'),
+  ]);
 
   if (!item) {
     notFound();
   }
 
-  const commentsData = await fetchCommentsWithAuthors(supabase, 'item_comments', 'item_id', parseInt(id));
-
-  // Fetch offers — owner sees all, buyer sees their own, others see accepted + pending counts only
-  const { data: offersData } = await supabase
-    .from('offers')
-    .select('*, buyer:profiles!offers_buyer_id_fkey(name, profile_pic)')
-    .eq('item_id', parseInt(id))
-    .order('created_at', { ascending: false });
   const allOffers = offersData || [];
-
   const comments = commentsData || [];
-
-  // Determine if the current user is logged in and if they are the seller
-  const { data: { user } } = await supabase.auth.getUser();
   const isOwner = user?.id === item.seller_id;
   const isLoggedIn = !!user;
 
-  let isAdmin = false;
-  if (isLoggedIn) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role === 'admin') isAdmin = true;
-  }
+  const [
+    { data: profile },
+    { data: userVotes },
+    { data: ratingsData },
+  ] = await Promise.all([
+    isLoggedIn
+      ? supabase.from('profiles').select('role').eq('id', user.id).single()
+      : Promise.resolve({ data: null } as { data: { role: string } | null }),
+    isLoggedIn
+      ? supabase.from('item_comment_votes').select('comment_id, vote_type').eq('user_id', user.id)
+      : Promise.resolve({ data: null } as { data: { comment_id: number; vote_type: number }[] | null }),
+    item.seller_id
+      ? supabase.from('user_ratings').select('rating').eq('target_user_id', item.seller_id)
+      : Promise.resolve({ data: null } as { data: { rating: number }[] | null }),
+  ]);
 
-  // If logged in, fetch user's votes to pass down
+  const isAdmin = profile?.role === 'admin';
+
   let finalComments = comments;
-  if (isLoggedIn) {
-    const { data: userVotes } = await supabase
-      .from('item_comment_votes')
-      .select('comment_id, vote_type')
-      .eq('user_id', user.id);
-      
-    if (userVotes && userVotes.length > 0) {
-      finalComments = comments.map(c => {
-        const vote = userVotes.find(v => v.comment_id === c.comment_id);
-        return vote ? { ...c, user_vote: vote.vote_type } : c;
-      });
-    }
+  if (userVotes && userVotes.length > 0) {
+    finalComments = comments.map(c => {
+      const vote = userVotes.find(v => v.comment_id === c.comment_id);
+      return vote ? { ...c, user_vote: vote.vote_type } : c;
+    });
   }
-
-
-  // Replies and @mentions need migration 0007; without it comments stay flat.
-  const threadsEnabled = await commentThreadsAvailable(supabase, 'item_comments');
   const mentionable = mentionablesFrom(finalComments as any, { id: item.seller_id, name: item.seller?.name, profile_slug: item.seller?.profile_slug, is_public: item.seller?.is_public });
 
-  // Fetch target user's ratings to calculate average
   let averageRating = 0;
   let totalRatings = 0;
-  if (item.seller_id) {
-    const { data: ratingsData } = await supabase
-      .from('user_ratings')
-      .select('rating')
-      .eq('target_user_id', item.seller_id);
-      
-    if (ratingsData && ratingsData.length > 0) {
-      totalRatings = ratingsData.length;
-      averageRating = ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / totalRatings;
-    }
+  if (ratingsData && ratingsData.length > 0) {
+    totalRatings = ratingsData.length;
+    averageRating = ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / totalRatings;
   }
 
   const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='600' height='400' fill='%23EEF7F2'/><text x='50%' y='50%' font-family='sans-serif' font-size='18' fill='%231A5C45' text-anchor='middle' dominant-baseline='middle'>No Photo</text></svg>";

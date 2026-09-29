@@ -53,20 +53,42 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const id = resolvedParams.id;
   
   const supabase = await createClient();
-  
-  const { data: listing, error } = await supabase
-    .from('listings')
-    .select(`
-      *,
-      zone:zones(zone_name),
-      costs:utility_costs(*),
-      amenities:listing_amenities(*),
-      reviews(*),
-      owner:profiles!listings_user_id_fkey(name, email, role, phone, profile_pic, profile_slug)
-    `)
-    .eq('listing_id', parseInt(id))
-    .single();
-    
+
+  // This page used to fire ~9 Supabase round-trips one at a time — a
+  // genuine waterfall, not just a lot of queries: each one waited for the
+  // previous to fully finish before it even started, so their latencies
+  // summed instead of overlapping (measured ~1.2s on this page alone).
+  // Grouped below into stages by REAL dependency, not just "what's
+  // convenient" — a query only moves to a later stage if it truly needs a
+  // value a same-stage query doesn't have yet. Every `isLoggedIn`/`isAdmin`
+  // gate below fires the exact same query under the exact same condition
+  // as before; a skipped query still resolves (to `null`) so Promise.all
+  // has something to await either way.
+
+  // Stage 0 — nothing here depends on anything else in this function.
+  const [
+    { data: listing, error },
+    { data: { user } },
+    comments,
+    threadsEnabled,
+  ] = await Promise.all([
+    supabase
+      .from('listings')
+      .select(`
+        *,
+        zone:zones(zone_name),
+        costs:utility_costs(*),
+        amenities:listing_amenities(*),
+        reviews(*),
+        owner:profiles!listings_user_id_fkey(name, email, role, phone, profile_pic, profile_slug)
+      `)
+      .eq('listing_id', parseInt(id))
+      .single(),
+    supabase.auth.getUser(),
+    fetchCommentsWithAuthors(supabase, 'listing_comments', 'listing_id', parseInt(id)),
+    commentThreadsAvailable(supabase, 'listing_comments'),
+  ]);
+
   if (error || !listing) {
     return notFound();
   }
@@ -84,106 +106,89 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const isOccupied = listing.status === 'occupied';
   // "Listed by — Landlord Listed" reads badly; the fact label already says "by".
   const listedByLabel = listing.listing_type === 'peer_listing' ? 'Fellow student' : 'Landlord';
-
-  // Check if user is logged in
-  const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
-  let isAdmin = false;
-  if (isLoggedIn) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role === 'admin') isAdmin = true;
-  }
-
-  // Check watchlist status if logged in
-  let isWatched = false;
-  if (isLoggedIn) {
-    const { count } = await supabase
-      .from('watchlists')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('listing_id', parseInt(id));
-    isWatched = (count || 0) > 0;
-  }
-
-  // Check existing application
-  let existingApplication: { status: string } | null = null;
-  if (isLoggedIn && user?.id !== listing.user_id && !isAdmin) {
-    const { data: appData } = await supabase
-      .from('applications')
-      .select('status')
-      .eq('listing_id', parseInt(id))
-      .eq('applicant_id', user.id)
+  // Stage 1 — each of these only needs `listing` and/or `user`, both
+  // already resolved above; none of them need each other's result.
+  const [
+    { data: profile },
+    { count: watchlistCount },
+    { data: userVotes },
+    { data: ratingsData },
+    { data: compRows },
+  ] = await Promise.all([
+    isLoggedIn
+      ? supabase.from('profiles').select('role').eq('id', user.id).single()
+      : Promise.resolve({ data: null } as { data: { role: string } | null }),
+    isLoggedIn
+      ? supabase.from('watchlists').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('listing_id', parseInt(id))
+      : Promise.resolve({ count: 0 }),
+    isLoggedIn
+      ? supabase.from('listing_comment_votes').select('comment_id, vote_type').eq('user_id', user.id)
+      : Promise.resolve({ data: null } as { data: { comment_id: number; vote_type: number }[] | null }),
+    listing.user_id
+      ? supabase.from('user_ratings').select('rating').eq('target_user_id', listing.user_id)
+      : Promise.resolve({ data: null } as { data: { rating: number }[] | null }),
+    // Comparable listings — same zone or same property type. One query feeds
+    // both the price comparison and the "similar listings" row. Unconditional,
+    // so no gate to preserve here.
+    supabase
+      .from('listings')
+      .select('*, zone:zones(zone_name), costs:utility_costs(*), amenities:listing_amenities(*)')
+      .neq('listing_id', parseInt(id))
+      .neq('status', 'occupied')
+      .or(`zone_id.eq.${listing.zone_id},property_type.eq.${listing.property_type}`)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    existingApplication = appData;
+      .limit(40),
+  ]);
+
+  const isAdmin = profile?.role === 'admin';
+  const isWatched = (watchlistCount || 0) > 0;
+
+  let finalComments = comments;
+  if (userVotes && userVotes.length > 0) {
+    finalComments = comments.map(c => {
+      const vote = userVotes.find(v => v.comment_id === c.comment_id);
+      return vote ? { ...c, user_vote: vote.vote_type } : c;
+    });
   }
+  const mentionable = mentionablesFrom(finalComments as any, { id: listing.user_id, name: owner.name, profile_slug: owner.profile_slug, is_public: owner.is_public });
+
+  let averageRating = 0;
+  let totalRatings = 0;
+  if (ratingsData && ratingsData.length > 0) {
+    totalRatings = ratingsData.length;
+    averageRating = ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / totalRatings;
+  }
+
+  // Stage 2 — both of these are gated on `isAdmin`, which only became known
+  // once stage 1 resolved, so they genuinely can't join stage 1.
+  const viewerIsOtherRenter = isLoggedIn && user!.id !== listing.user_id && !isAdmin;
+  const [
+    { data: appData },
+    { data: prefRows },
+  ] = await Promise.all([
+    viewerIsOtherRenter
+      ? supabase.from('applications').select('status').eq('listing_id', parseInt(id)).eq('applicant_id', user!.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+      : Promise.resolve({ data: null } as { data: { status: string } | null }),
+    viewerIsOtherRenter
+      ? supabase.from('user_preferences').select('*').in('user_id', [user!.id, listing.user_id])
+      : Promise.resolve({ data: null } as { data: any[] | null }),
+  ]);
+
+  const existingApplication: { status: string } | null = appData;
 
   // Flatmate compatibility against whoever listed the place. Both sides need a
   // preferences row; with only the lister's, the card becomes the prompt to
   // fill yours in.
   let compat: CompatResult | null = null;
   let compatNeedsMine = false;
-  if (isLoggedIn && user!.id !== listing.user_id && !isAdmin) {
-    const { data: prefRows } = await supabase
-      .from('user_preferences')
-      .select('*')
-      .in('user_id', [user!.id, listing.user_id]);
+  if (viewerIsOtherRenter) {
     const mine = prefRows?.find(r => r.user_id === user!.id) ?? null;
     const theirs = prefRows?.find(r => r.user_id === listing.user_id) ?? null;
     if (mine && theirs) compat = scoreCompatibility(mine, theirs, listing.gender_pref);
     else if (theirs) compatNeedsMine = true;
   }
-
-  // Fetch comments
-  const comments = await fetchCommentsWithAuthors(supabase, 'listing_comments', 'listing_id', parseInt(id));
-
-  let finalComments = comments;
-  if (isLoggedIn) {
-    const { data: userVotes } = await supabase
-      .from('listing_comment_votes')
-      .select('comment_id, vote_type')
-      .eq('user_id', user.id);
-      
-    if (userVotes && userVotes.length > 0) {
-      finalComments = comments.map(c => {
-        const vote = userVotes.find(v => v.comment_id === c.comment_id);
-        return vote ? { ...c, user_vote: vote.vote_type } : c;
-      });
-    }
-  }
-
-
-  // Replies and @mentions need migration 0007; without it comments stay flat.
-  const threadsEnabled = await commentThreadsAvailable(supabase, 'listing_comments');
-  const mentionable = mentionablesFrom(finalComments as any, { id: listing.user_id, name: owner.name, profile_slug: owner.profile_slug, is_public: owner.is_public });
-
-  // Fetch ratings for the landlord
-  let averageRating = 0;
-  let totalRatings = 0;
-  if (listing.user_id) {
-    const { data: ratingsData } = await supabase
-      .from('user_ratings')
-      .select('rating')
-      .eq('target_user_id', listing.user_id);
-      
-    if (ratingsData && ratingsData.length > 0) {
-      totalRatings = ratingsData.length;
-      averageRating = ratingsData.reduce((acc: number, curr: any) => acc + curr.rating, 0) / totalRatings;
-    }
-  }
-
-  // Comparable listings — same zone or same property type. One query feeds both
-  // the price comparison and the "similar listings" row.
-  const { data: compRows } = await supabase
-    .from('listings')
-    .select('*, zone:zones(zone_name), costs:utility_costs(*), amenities:listing_amenities(*)')
-    .neq('listing_id', parseInt(id))
-    .neq('status', 'occupied')
-    .or(`zone_id.eq.${listing.zone_id},property_type.eq.${listing.property_type}`)
-    .order('created_at', { ascending: false })
-    .limit(40);
 
   const comps: any[] = (compRows || []).map((l: any) => ({ ...l, zone: l.zone?.zone_name ?? undefined }));
   const thisTotal = Number(listing.costs?.total_monthly || 0);
