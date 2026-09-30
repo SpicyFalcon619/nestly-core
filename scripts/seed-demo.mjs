@@ -223,6 +223,9 @@ const ITEMS = [
       'Uninstalling is on the buyer; I can recommend the technician who services it.',
     reason_for_selling: 'Landlord installed one in the flat',
     photos: photo('nestly-ac', 3),
+    // Leftover from a furnished unit — plausible for a landlord to be
+    // selling it, and keeps the marketplace from reading as one seller.
+    seller: 'landlord',
   },
   {
     title: 'Rice cooker and induction stove set',
@@ -233,6 +236,7 @@ const ITEMS = [
       'Both work perfectly, box and manual for the induction stove included.',
     reason_for_selling: 'Mess cooks together now',
     photos: photo('nestly-kitchen', 2),
+    seller: 'student',
   },
   {
     title: 'HP 15s laptop, i5 11th gen, 8GB RAM',
@@ -253,6 +257,7 @@ const ITEMS = [
       'Some rust at the base, hidden once it stands against a wall. Heavy — bring two people.',
     reason_for_selling: 'Room came with a built-in wardrobe',
     photos: photo('nestly-almirah', 2),
+    seller: 'landlord',
   },
   {
     title: 'Study lamp and desk organiser',
@@ -349,13 +354,18 @@ async function seed() {
   // Rows from an earlier run still belong to whoever owned them then.
   for (const l of LISTINGS) await reownDemoRows(db, 'listings', 'user_id', [l.title], ownerFor(l).id);
 
-  const itemSeller = accounts.student2 || accounts.student;
-  await seedItems(itemSeller, zoneId);
-  await reownDemoRows(db, 'items', 'seller_id', ITEM_TITLES, itemSeller.id);
+  // Default seller (items with no explicit `seller` key) — most items are
+  // still a student passing furniture along. A few name 'landlord' directly
+  // above so the marketplace grid isn't one account's yard sale.
+  const defaultSeller = accounts.student2 || accounts.student;
+  const sellerFor = (item) => (item.seller && accounts[item.seller]) || defaultSeller;
+  await seedItems(sellerFor, zoneId);
+  // Rows from an earlier run still belong to whoever owned them then.
+  for (const item of ITEMS) await reownDemoRows(db, 'items', 'seller_id', [item.title], sellerFor(item).id);
   console.log('Remove with: node scripts/seed-demo.mjs --clean');
 }
 
-async function seedItems(seller, zoneId) {
+async function seedItems(sellerFor, zoneId) {
   const { data: existing } = await db.from('items').select('title').in('title', ITEM_TITLES);
   const already = new Set((existing || []).map(r => r.title));
 
@@ -364,10 +374,10 @@ async function seedItems(seller, zoneId) {
       console.log(`skip   ${item.title.slice(0, 50)}… (exists)`);
       continue;
     }
-    const { zone, photos, ...rest } = item;
+    const { zone, photos, seller, ...rest } = item;
     const { data: inserted, error } = await db.from('items').insert({
       ...rest,
-      seller_id: seller.id,
+      seller_id: sellerFor(item).id,
       zone_id: zoneId(zone),
       status: 'available',
       // photo_url is what older rows use; keep both so either read path works.
