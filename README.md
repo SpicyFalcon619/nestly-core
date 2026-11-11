@@ -76,15 +76,20 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
    node scripts/seed-demo.mjs --clean  # remove them again
    ```
 
-   The same script creates one demo account per role, so every screen can be
-   seen without using a real account:
+   The same script creates one demo account per role (student, a second student,
+   landlord and admin), so every screen can be seen without using a real account.
+   Their passwords are **not** published here: each account gets its own random
+   password, saved only in `.env.demo-accounts` at the project root (private and
+   git-ignored). To create the accounts, or to repair them, run:
 
-   | Role | Email | Password |
-   | --- | --- | --- |
-   | Student | student@test.com | 1234Student |
-   | Student | student2@test.com | 1234Student |
-   | Landlord | landlord@test.com | 1234Landlord |
-   | Admin | admin@test.com | 1234Admin |
+   ```bash
+   node scripts/create-demo-accounts.mjs --allow-remote
+   ```
+
+   then open `.env.demo-accounts` to copy a login. The seed scripts write past all
+   security rules, so they refuse to run against a remote Supabase project unless
+   you pass `--allow-remote` on purpose. Never run them against a database that
+   holds real users, and delete the demo admin when you are not testing.
 
    Demo listings and marketplace items belong to these accounts, and `--clean`
    removes that content while keeping the accounts. There are two students on

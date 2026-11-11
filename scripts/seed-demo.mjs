@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { ensureDemoAccounts, reownDemoRows } from './demo-accounts.mjs';
+import { assertSafeTarget } from './demo-credentials.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const env = readFileSync(join(root, '.env.local'), 'utf8');
@@ -24,6 +25,7 @@ if (!url || !serviceKey) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
   process.exit(1);
 }
+assertSafeTarget(url); // refuses a remote project unless --allow-remote is passed
 const db = createClient(url, serviceKey);
 
 const photo = (seed, n) =>

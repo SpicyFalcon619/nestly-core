@@ -11,11 +11,14 @@
  * runs, and deleting an auth user takes all of it with them.
  */
 
+import { loadDemoPasswords } from './demo-credentials.mjs';
+
+// Passwords are not written here. Each account gets a random one, kept in the
+// private, git-ignored file .env.demo-accounts (see demo-credentials.mjs).
 export const DEMO_ACCOUNTS = [
   {
     key: 'student',
     email: 'student@test.com',
-    password: '1234Student',
     // "Student Test" (no suffix) already belongs to an old pre-existing
     // dev account (ahossain2420505@...) that predates this seed script —
     // this one was named "Student Test 2" originally to avoid colliding
@@ -40,7 +43,6 @@ export const DEMO_ACCOUNTS = [
   {
     key: 'student2',
     email: 'student2@test.com',
-    password: '1234Student',
     name: 'Nusrat Demo',
     role: 'student',
     gender: 'female',
@@ -55,7 +57,6 @@ export const DEMO_ACCOUNTS = [
   {
     key: 'landlord',
     email: 'landlord@test.com',
-    password: '1234Landlord',
     name: 'Landlord Demo',
     role: 'landlord',
     gender: 'male',
@@ -73,7 +74,6 @@ export const DEMO_ACCOUNTS = [
   {
     key: 'admin',
     email: 'admin@test.com',
-    password: '1234Admin',
     name: 'Admin Demo',
     role: 'admin',
     gender: 'male',
@@ -94,13 +94,14 @@ const slugify = (name, id) =>
  */
 export async function ensureDemoAccounts(db) {
   const out = {};
+  const passwords = loadDemoPasswords(DEMO_ACCOUNTS);
 
   for (const account of DEMO_ACCOUNTS) {
     let id = null;
 
     const { data: created, error } = await db.auth.admin.createUser({
       email: account.email,
-      password: account.password,
+      password: passwords[account.key],
       email_confirm: true,
       user_metadata: { name: account.name, role: account.role, gender: account.gender },
     });
@@ -109,7 +110,7 @@ export async function ensureDemoAccounts(db) {
       id = created.user.id;
       console.log('account  ' + account.email + '  created');
     } else {
-      // Already exists — find it and keep the password in step with the docs.
+      // Already exists — find it and keep its password in step with the private file.
       const { data: existing } = await db
         .from('profiles').select('id').eq('email', account.email).maybeSingle();
       id = existing?.id ?? null;
@@ -117,8 +118,8 @@ export async function ensureDemoAccounts(db) {
         console.error('FAILED ' + account.email + ': ' + (error?.message ?? 'not found'));
         continue;
       }
-      await db.auth.admin.updateUserById(id, { password: account.password, email_confirm: true });
-      console.log('account  ' + account.email + '  exists (password reset to the documented one)');
+      await db.auth.admin.updateUserById(id, { password: passwords[account.key], email_confirm: true });
+      console.log('account  ' + account.email + '  exists (password reset to the one in .env.demo-accounts)');
     }
 
     await db.from('profiles').update({

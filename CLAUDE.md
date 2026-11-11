@@ -507,8 +507,9 @@ accounts.
   removes them), owned by a student — the Exchange had two hand-made rows and
   nothing to look at.
 - **Demo accounts, one per role** (`scripts/demo-accounts.mjs`, created by
-  `seed-demo.mjs`): student@test.com / student2@test.com (1234Student),
-  landlord@test.com (1234Landlord), admin@test.com (1234Admin). Every demo
+  `seed-demo.mjs`): student@test.com, student2@test.com, landlord@test.com and
+  admin@test.com. Their passwords are random and live only in the private,
+  git-ignored `.env.demo-accounts` (`create-demo-accounts.mjs` makes it). Every demo
   listing and exchange item is re-pointed at them on each run
   (`reownDemoRows`), so demo content never sits under a real account.
   **Two** students on purpose: compatibility never scores your own listing, so

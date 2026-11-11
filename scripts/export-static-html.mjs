@@ -18,6 +18,7 @@
 import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { loadDemoLogins } from './demo-credentials.mjs';
 
 const BASE = process.env.EXPORT_BASE_URL || 'http://localhost:3000';
 const OUT = resolve(process.env.EXPORT_OUT || 'figma-export');
@@ -37,15 +38,12 @@ const DO_MOBILE = process.env.SKIP_MOBILE !== '1';
 const DESKTOP = { width: 1440, height: 1080 };
 const MOBILE = { width: 390, height: 844 };
 
-const ACCOUNTS = {
-  student: { email: 'student@test.com', password: '1234Student' },
-  // Only for the two exchange-item screens below: student@test.com (used for
-  // every other student screen) owns no marketplace items in the seed data —
-  // student2 does — so it's the only account that shows a non-empty state.
-  student2: { email: 'student2@test.com', password: '1234Student' },
-  landlord: { email: 'landlord@test.com', password: '1234Landlord' },
-  admin: { email: 'admin@test.com', password: '1234Admin' },
-};
+// Logins come from the private, git-ignored file .env.demo-accounts, which
+// `node scripts/create-demo-accounts.mjs --allow-remote` creates.
+// student2 is only for the two exchange-item screens below: student@test.com
+// (used for every other student screen) owns no marketplace items in the seed
+// data — student2 does — so it's the only account that shows a non-empty state.
+const ACCOUNTS = loadDemoLogins(['student', 'student2', 'landlord', 'admin']);
 
 /**
  * role: null means logged out.
