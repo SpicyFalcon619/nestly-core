@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { fetchUserActivity } from '@/lib/activity';
 import { savedSearchesAvailable } from '@/lib/savedSearch';
+import { fetchContacts } from '@/lib/contacts';
 import DashboardContent from './DashboardContent';
 import type { Profile, DashboardData, Listing, Item, Offer, Application, SeekingPost, SeekingResponse } from '@/types';
 
@@ -13,11 +14,9 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userData.user.id)
-    .single();
+  // Your own profile, through a database function (email, phone and student ID
+  // are protected columns that a plain select cannot read).
+  const { data: profile } = await supabase.rpc('get_my_profile').single<any>();
 
   if (!profile) {
     redirect('/login');
@@ -48,13 +47,13 @@ export default async function DashboardPage() {
     supabase.from('listings').select('*, costs:utility_costs(*)').eq('user_id', userId),
     supabase.from('items').select('*').eq('seller_id', userId),
     supabase.from('watchlists').select('listing:listings(*, costs:utility_costs(*))').eq('user_id', userId),
-    supabase.from('offers').select('*, item:items(title), seller:profiles!offers_item_seller_id_fkey(name, email)').eq('buyer_id', userId),
-    supabase.from('offers').select('*, item:items(title), buyer:profiles!offers_buyer_id_fkey(name, email)').eq('item.seller_id', userId), // Actually need to join to get items where seller is me
+    supabase.from('offers').select('*, item:items(title), seller:profiles!offers_item_seller_id_fkey(id, name)').eq('buyer_id', userId),
+    supabase.from('offers').select('*, item:items(title), buyer:profiles!offers_buyer_id_fkey(id, name)').eq('item.seller_id', userId), // Actually need to join to get items where seller is me
     supabase.from('applications').select('*, listing:listings(title, user_id, owner_name:profiles!listings_user_id_fkey(name))').eq('applicant_id', userId),
-    supabase.from('applications').select('*, applicant:profiles!applications_applicant_id_fkey(name, email), listing:listings!inner(user_id, title)').eq('listing.user_id', userId),
+    supabase.from('applications').select('*, applicant:profiles!applications_applicant_id_fkey(id, name), listing:listings!inner(user_id, title)').eq('listing.user_id', userId),
     supabase.from('seeking_posts').select('*').eq('user_id', userId),
-    supabase.from('seeking_responses').select('*, owner:profiles!seeking_responses_post_owner_id_fkey(name, email)').eq('responder_id', userId),
-    supabase.from('seeking_responses').select('*, responder:profiles!seeking_responses_responder_id_fkey(name, email), post:seeking_posts!inner(user_id)').eq('post.user_id', userId),
+    supabase.from('seeking_responses').select('*, owner:profiles!seeking_responses_post_owner_id_fkey(id, name)').eq('responder_id', userId),
+    supabase.from('seeking_responses').select('*, responder:profiles!seeking_responses_responder_id_fkey(id, name), post:seeking_posts!inner(user_id)').eq('post.user_id', userId),
     supabase.from('user_preferences').select('pref_id').eq('user_id', userId).maybeSingle(),
     supabase.from('verifications').select('status').eq('user_id', userId).order('submitted_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false })
@@ -74,10 +73,20 @@ export default async function DashboardPage() {
         offer_price,
         counter_price,
         status,
-        buyer:profiles!offers_buyer_id_fkey(name, email)
+        buyer:profiles!offers_buyer_id_fkey(name)
       )
     `)
     .eq('seller_id', userId);
+
+  // Emails come from the contacts function, never from a profiles join: the
+  // database only returns the ones the other person is allowed to see.
+  const contacts = await fetchContacts(supabase, [
+    ...(offersSent || []).map((o: any) => o.seller?.id),
+    ...(myItemsWithOffers || []).flatMap((item: any) => (item.offers || []).map((o: any) => o.buyer_id)),
+    ...(appsRecv || []).map((a: any) => a.applicant?.id),
+    ...(seekRespSent || []).map((r: any) => r.owner?.id),
+    ...(seekRespRecv || []).map((r: any) => r.responder?.id),
+  ]);
 
   let flatOffersRecv: any[] = [];
   if (myItemsWithOffers) {
@@ -88,7 +97,7 @@ export default async function DashboardPage() {
             ...o,
             title: item.title,
             buyer_name: o.buyer?.name,
-            buyer_email: o.buyer?.email
+            buyer_email: contacts.get(o.buyer_id)?.email
           });
         });
       }
@@ -111,7 +120,7 @@ export default async function DashboardPage() {
       ...o,
       title: o.item?.title,
       seller_name: o.seller?.name,
-      seller_email: o.seller?.email
+      seller_email: contacts.get(o.seller?.id)?.email
     })) as Offer[],
     offersRecv: flatOffersRecv as Offer[],
     appsSent: (appsSent || []).map((a: any) => ({
@@ -124,18 +133,18 @@ export default async function DashboardPage() {
       ...a,
       listing_title: a.listing?.title,
       applicant_name: a.applicant?.name,
-      applicant_email: a.applicant?.email
+      applicant_email: contacts.get(a.applicant?.id)?.email
     })) as Application[],
     mySeeking: (mySeeking || []) as SeekingPost[],
     seekRespSent: (seekRespSent || []).map((r: any) => ({
       ...r,
       owner_name: r.owner?.name,
-      owner_email: r.owner?.email
+      owner_email: contacts.get(r.owner?.id)?.email
     })) as SeekingResponse[],
     seekRespRecv: (seekRespRecv || []).map((r: any) => ({
       ...r,
       responder_name: r.responder?.name,
-      responder_email: r.responder?.email
+      responder_email: contacts.get(r.responder?.id)?.email
     })) as SeekingResponse[],
     hasPreferences: !!hasPreferences,
     activity,

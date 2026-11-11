@@ -15,12 +15,8 @@ export default async function ProfilePage() {
     redirect('/login');
   }
 
-  // Fetch profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
+  // Fetch profile (your own, including the protected email, phone and student ID)
+  const { data: profile } = await supabase.rpc('get_my_profile').single<any>();
 
   if (!profile) {
     redirect('/login');

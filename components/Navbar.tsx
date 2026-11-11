@@ -29,11 +29,9 @@ export default function Navbar() {
     const fetchUser = async () => {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (authUser) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
+        // Your own profile, through a database function: email, phone and student
+        // ID are protected columns that a plain select cannot read.
+        const { data: profile } = await supabase.rpc('get_my_profile').single<Profile>();
         
         if (profile?.status === 'suspended') {
           await supabase.auth.signOut();

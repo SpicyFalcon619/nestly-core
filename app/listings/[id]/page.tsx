@@ -9,6 +9,7 @@ import ListingMap from '@/components/ListingMap';
 import PhotoGallery from '@/components/PhotoGallery';
 import StatusChanger from '@/components/StatusChanger';
 import { fetchCommentsWithAuthors, commentThreadsAvailable, mentionablesFrom } from '@/lib/comments';
+import { fetchContacts } from '@/lib/contacts';
 import ReportButton from '@/components/ReportButton';
 import CommentSection from '@/components/comments/CommentSection';
 import UserRating from '@/components/ratings/UserRating';
@@ -80,7 +81,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
         costs:utility_costs(*),
         amenities:listing_amenities(*),
         reviews(*),
-        owner:profiles!listings_user_id_fkey(name, email, role, phone, profile_pic, profile_slug)
+        owner:profiles!listings_user_id_fkey(name, role, profile_pic, profile_slug)
       `)
       .eq('listing_id', parseInt(id))
       .single(),
@@ -177,6 +178,14 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   ]);
 
   const existingApplication: { status: string } | null = appData;
+
+  // The landlord's email and phone are protected columns, so they are not part
+  // of the query above. The database hands them out only to the landlord or to
+  // an applicant whose application was accepted; for anyone else this stays empty.
+  const canSeeOwnerContact = user?.id === listing.user_id || existingApplication?.status === 'accepted';
+  const ownerContact = canSeeOwnerContact
+    ? (await fetchContacts(supabase, [listing.user_id])).get(listing.user_id)
+    : undefined;
 
   // Flatmate compatibility against whoever listed the place. Both sides need a
   // preferences row; with only the lister's, the card becomes the prompt to
@@ -496,22 +505,22 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               {/* Contact details are private until the landlord accepts — that
                   acceptance is the point at which the two parties actually need
                   to reach each other outside the app. */}
-              {(owner.phone || owner.email) && (
+              {(ownerContact?.phone || ownerContact?.email || !canSeeOwnerContact) && (
                 existingApplication?.status === 'accepted' || user?.id === listing.user_id ? (
                   <div style={{ marginBottom: '16px', padding: '14px', background: 'var(--tint-green)', border: '1px solid color-mix(in srgb, var(--emerald) 30%, transparent)', borderRadius: '8px' }}>
                     <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-muted)', marginBottom: '8px' }}>
                       Contact details
                     </div>
-                    {owner.phone && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: owner.email ? '6px' : 0 }}>
+                    {ownerContact?.phone && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: ownerContact?.email ? '6px' : 0 }}>
                         <Phone size={14} style={{ color: 'var(--emerald)', flexShrink: 0 }} />
-                        <a href={`tel:${owner.phone}`}>{owner.phone}</a>
+                        <a href={`tel:${ownerContact.phone}`}>{ownerContact.phone}</a>
                       </div>
                     )}
-                    {owner.email && (
+                    {ownerContact?.email && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', wordBreak: 'break-all' }}>
                         <Mail size={14} style={{ color: 'var(--emerald)', flexShrink: 0 }} />
-                        <a href={`mailto:${owner.email}`}>{owner.email}</a>
+                        <a href={`mailto:${ownerContact.email}`}>{ownerContact.email}</a>
                       </div>
                     )}
                   </div>

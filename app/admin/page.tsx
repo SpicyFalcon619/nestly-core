@@ -59,7 +59,7 @@ export default async function AdminPage() {
 
   // Fetch Stats Data
   const { count: totalListings } = await supabase.from('listings').select('*', { count: 'exact', head: true });
-  const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+  const { count: totalUsers } = await adminSupabase.from('profiles').select('*', { count: 'exact', head: true });
   // complaint_status is really ('submitted', 'under_review', 'resolved') —
   // 'open'/'pending' never match, so this always read 0 regardless of data.
   const openComplaints = complaints.filter(c => c.status === 'submitted' || c.status === 'under_review').length;
@@ -69,8 +69,9 @@ export default async function AdminPage() {
   const { data: zones } = await supabase.from('zones').select('zone_id, zone_name');
 
   // Fetch full listings & users for the new tables
-  const { data: allUsers } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-  const { data: allListingsData } = await supabase.from('listings').select('*, zone:zones(zone_name), owner:profiles!listings_user_id_fkey(name, email)').order('created_at', { ascending: false });
+  // These two read private columns (email), so they go through the admin client.
+  const { data: allUsers } = await adminSupabase.from('profiles').select('*').order('created_at', { ascending: false });
+  const { data: allListingsData } = await adminSupabase.from('listings').select('*, zone:zones(zone_name), owner:profiles!listings_user_id_fkey(name, email)').order('created_at', { ascending: false });
 
   // Fetch Notifications
   const { data: notificationsRes } = await supabase

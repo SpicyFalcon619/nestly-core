@@ -59,6 +59,8 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
 
    Identity-verification documents are stored in a separate **private** `verifications` bucket (created by migration `0009`), never in the public `uiunest` bucket, and admins open them through short-lived signed links. If you have older documents in the public bucket, move them with `node scripts/migrate-verification-docs.mjs` (a dry run by default; see the header of that file).
 
+   A user's `email`, `phone` and `university_id` are protected columns: the public API cannot read them. The app reads your own through `get_my_profile()` and other people's through `get_contact_details()` (migration `0010`), which return a contact only where the product allows it (a landlord's after they accept your application, a seller's once you have made an offer, and so on). Migration `0011` applies the column lock, so apply it **after** `0010` and after the matching app version is deployed. A column added to `profiles` later needs an explicit `grant select (column) on public.profiles to anon, authenticated;`.
+
 4. Start the dev server:
 
    ```bash

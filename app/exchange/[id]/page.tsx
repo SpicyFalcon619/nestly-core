@@ -10,6 +10,7 @@ import OffersSection from '@/components/OffersSection';
 import MessageButton from '@/components/MessageButton';
 import PhotoGallery from '@/components/PhotoGallery';
 import { fetchCommentsWithAuthors, commentThreadsAvailable, mentionablesFrom } from '@/lib/comments';
+import { fetchContacts } from '@/lib/contacts';
 
 export default async function ExchangeItemDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +30,7 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
       .from('items')
       .select(`
         *,
-        seller:profiles!items_seller_id_fkey(name, email, phone, university_id, created_at, profile_pic, profile_slug),
+        seller:profiles!items_seller_id_fkey(name, created_at, profile_pic, profile_slug),
         zone:zones(zone_name),
         listing:listings(title, listing_id)
       `)
@@ -72,6 +73,15 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
   ]);
 
   const isAdmin = profile?.role === 'admin';
+
+  // The seller's email and phone are protected columns. They are shown to the
+  // seller, to an admin, and to anyone who has made an offer on this item (the
+  // offers list above only ever contains offers the viewer is allowed to see).
+  // The database enforces the same rule, so this is a display convenience only.
+  const hasMadeOffer = isLoggedIn && allOffers.some((o: any) => o.buyer_id === user.id);
+  const sellerContact = isLoggedIn && (isOwner || isAdmin || hasMadeOffer)
+    ? (await fetchContacts(supabase, [item.seller_id])).get(item.seller_id)
+    : undefined;
 
   let finalComments = comments;
   if (userVotes && userVotes.length > 0) {
@@ -167,17 +177,21 @@ export default async function ExchangeItemDetail({ params }: { params: Promise<{
               </div>
             </div>
             
-            {/* Show contact info only to logged in users */}
-            {isLoggedIn ? (
-              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '14px', marginBottom: '4px' }}><strong>Email:</strong> {item.seller?.email}</div>
-                <div style={{ fontSize: '14px' }}><strong>Phone:</strong> {item.seller?.phone || 'Not provided'}</div>
-              </div>
-            ) : (
+            {/* Contact info is shared with the seller and with people who made an offer */}
+            {!isLoggedIn ? (
               <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px', textAlign: 'center', fontSize: '14px' }}>
-                <Link href="/login" style={{ color: 'var(--primary)' }}>Log in to view contact details</Link>
+                <Link href="/login" style={{ color: 'var(--primary)' }}>Log in to make an offer and see contact details</Link>
               </div>
-            )}
+            ) : sellerContact ? (
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '14px', marginBottom: '4px' }}><strong>Email:</strong> {sellerContact.email}</div>
+                <div style={{ fontSize: '14px' }}><strong>Phone:</strong> {sellerContact.phone || 'Not provided'}</div>
+              </div>
+            ) : !isOwner ? (
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'var(--surface-2)', borderRadius: '8px', textAlign: 'center', fontSize: '14px', color: 'var(--gray)' }}>
+                Make an offer to see the seller&apos;s contact details.
+              </div>
+            ) : null}
           </div>
 
           {item.listing && (
