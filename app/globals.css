@@ -1256,6 +1256,18 @@ input[type="range"]:focus-visible { outline: 2px solid var(--emerald); outline-o
 .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .table-responsive .table { width: 100%; white-space: nowrap; }
 
+/* Free-text cells (complaint descriptions, application messages). The rule above
+   stops every cell from wrapping, so a long sentence ran on underneath the
+   columns next to it. These cells opt back in to wrapping, with a width range
+   that keeps the row readable and lets the table scroll sideways instead. */
+.table-responsive .table td.cell-wrap {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 340px;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
 /* Dropdowns use fixed positioning (set via JS) to escape overflow:auto parents */
 
 .cost-table .total-row { background: var(--emerald-soft); }

@@ -294,7 +294,7 @@ export default function AdminContent({
                         {(c as any).listingTitle && <div style={{ fontSize: '12px', color: 'var(--gray)' }}>Re: {(c as any).listingTitle}</div>}
                       </td>
                       <td>{c.category}</td>
-                      <td style={{ maxWidth: '250px' }}>{c.description}</td>
+                      <td className="cell-wrap">{c.description}</td>
                       <td><span dangerouslySetInnerHTML={{ __html: statusBadge(c.status) }} /></td>
                       <td>
                         {/* Same enum mismatch as the Overview stat: real values are

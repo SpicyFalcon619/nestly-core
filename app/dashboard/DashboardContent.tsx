@@ -431,7 +431,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                         {seekRespRecv.map(r => (
                           <tr key={r.response_id}>
                             <td><strong>{r.responder_name}</strong></td>
-                            <td style={{ maxWidth: 200, wordBreak: 'break-word' }}>{r.message}</td>
+                            <td className="cell-wrap">{r.message}</td>
                             <td>{statusBadgeEl(r.status)}</td>
                             <td>
                               {r.status === 'pending' && (
@@ -461,7 +461,7 @@ export default function DashboardContent({ data, user }: { data: DashboardData; 
                           <tr key={r.response_id}>
                             <td>{r.requirements ? r.requirements.substring(0, 40) + '…' : '—'}</td>
                             <td>{r.owner_name || '—'}</td>
-                            <td style={{ maxWidth: 200 }}>{r.message}</td>
+                            <td className="cell-wrap">{r.message}</td>
                             <td>{statusBadgeEl(r.status)}</td>
                           </tr>
                         ))}
