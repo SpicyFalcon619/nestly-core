@@ -3,6 +3,7 @@
 // type is read from the first bytes of the file itself.
 
 export const MAX_VERIFICATION_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export const NID_TYPES = ['National ID', 'Passport', 'Driving License'] as const;
 

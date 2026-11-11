@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminNotification } from './notifications';
-import { MAX_VERIFICATION_BYTES, NID_TYPES, detectFileType } from '@/lib/upload-validation';
+import { MAX_PHOTO_BYTES, MAX_VERIFICATION_BYTES, NID_TYPES, detectFileType } from '@/lib/upload-validation';
 
 export async function uploadVerificationDocument(formData: FormData) {
   try {
@@ -111,17 +111,30 @@ export async function uploadExchangeItemPhoto(formData: FormData) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    const ext = file.name.split('.').pop();
-    const filePath = `exchange/${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    // This bucket is public, so what lands in it is served to everyone. Check the
+    // size and the real file type (from the bytes, not the name the browser
+    // claims) and only accept photos: an uploaded script, page or SVG would be
+    // served straight from the project's own storage domain.
+    if (file.size > MAX_PHOTO_BYTES) {
+      throw new Error("Photo is too large. The limit is 10 MB.");
+    }
 
     // Convert File to ArrayBuffer to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    const detected = detectFileType(buffer);
+    if (!detected || !detected.mime.startsWith('image/')) {
+      throw new Error("Unsupported file. Please upload a JPG, PNG or WebP photo.");
+    }
+
+    // Random name; the extension comes from the verified type.
+    const filePath = `exchange/${crypto.randomUUID()}.${detected.ext}`;
+
     const { error: uploadError } = await adminSupabase.storage
       .from('uiunest')
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType: detected.mime,
         upsert: false
       });
 
