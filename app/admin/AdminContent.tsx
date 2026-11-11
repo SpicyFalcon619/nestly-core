@@ -8,7 +8,7 @@ import { ShieldAlert, UserCheck, TrendingUp, Home, Users } from 'lucide-react';
 import { statusBadge } from '@/lib/utils';
 import RentChart from './RentChart';
 import DemandChart from './DemandChart';
-import { adminUpdateVerification, adminUpdateComplaint, adminUpdateUserStatus, adminDeleteListing } from '@/app/actions/admin';
+import { adminUpdateVerification, adminGetVerificationDocumentUrl, adminUpdateComplaint, adminUpdateUserStatus, adminDeleteListing } from '@/app/actions/admin';
 import { markNotificationAsRead } from '@/app/actions/notifications';
 import DocumentViewerModal from '@/components/modals/DocumentViewerModal';
 
@@ -55,8 +55,13 @@ export default function AdminContent({
   const [viewerUrl, setViewerUrl] = useState<string | null>(null);
   const [viewerType, setViewerType] = useState<string>('Document');
 
-  const openDocument = (url: string, type: string) => {
-    setViewerUrl(url);
+  const openDocument = async (verificationId: number, type: string) => {
+    const result = await adminGetVerificationDocumentUrl(verificationId);
+    if (!result.success || !result.url) {
+      toast.error(result.error || 'Could not open the document');
+      return;
+    }
+    setViewerUrl(result.url);
     setViewerType(type);
     setViewerOpen(true);
   };
@@ -239,7 +244,7 @@ export default function AdminContent({
                       <td>{mounted ? new Date(v.submitted_at).toLocaleDateString() : ''}</td>
                       <td><span dangerouslySetInnerHTML={{ __html: statusBadge(v.status) }} /></td>
                       <td>
-                        <button className="btn btn-outline btn-sm" onClick={() => openDocument(v.document_path, v.nid_type)}>
+                        <button className="btn btn-outline btn-sm" onClick={() => openDocument(v.verification_id, v.nid_type)}>
                           View Document
                         </button>
                       </td>

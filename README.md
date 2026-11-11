@@ -57,6 +57,8 @@ Nestly connects three kinds of user — **Renters**, **Landlords**, and **Admini
 
 3. Apply the SQL migrations in `supabase/migrations/` to your Supabase project, in order (via the SQL Editor or the Supabase CLI).
 
+   Identity-verification documents are stored in a separate **private** `verifications` bucket (created by migration `0009`), never in the public `uiunest` bucket, and admins open them through short-lived signed links. If you have older documents in the public bucket, move them with `node scripts/migrate-verification-docs.mjs` (a dry run by default; see the header of that file).
+
 4. Start the dev server:
 
    ```bash

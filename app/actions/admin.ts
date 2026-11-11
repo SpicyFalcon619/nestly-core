@@ -26,6 +26,43 @@ async function getAdminSupabase() {
   );
 }
 
+// Identity documents live in a private bucket. Admins open them through a
+// short-lived signed link created here, after the same admin check as every
+// other action in this file.
+export async function adminGetVerificationDocumentUrl(id: number) {
+  try {
+    const adminSupabase = await getAdminSupabase();
+    const { data: verif, error } = await adminSupabase
+      .from('verifications')
+      .select('document_path')
+      .eq('verification_id', id)
+      .single();
+
+    if (error || !verif) throw new Error('Verification not found');
+    const path: string = verif.document_path;
+
+    // Rows created by the demo seed have no real file.
+    if (path.startsWith('demo://')) {
+      return { success: false, error: 'This demo account has no document on file.' };
+    }
+
+    // Rows created before the private bucket existed hold a full public URL.
+    // Until scripts/migrate-verification-docs.mjs has moved them, hand it back.
+    if (/^https?:\/\//.test(path)) {
+      return { success: true, url: path };
+    }
+
+    const { data, error: signError } = await adminSupabase.storage
+      .from('verifications')
+      .createSignedUrl(path, 300); // valid for 5 minutes
+
+    if (signError || !data) throw new Error(signError?.message || 'Could not create a link to the document');
+    return { success: true, url: data.signedUrl };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function adminUpdateVerification(id: number, status: 'approved' | 'rejected') {
   try {
     const adminSupabase = await getAdminSupabase();
